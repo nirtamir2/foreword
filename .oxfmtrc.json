@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "experimentalTailwindcss": {
+    "stylesheet": "./apps/web/src/index.css",
+    "functions": ["clsx", "cva"]
+  },
+  "experimentalSortImports": {
+    "newlinesBetween": false,
+    "customGroups": [
+      {
+        "groupName": "react",
+        "elementNamePattern": ["react"]
+      },
+      {
+        "groupName": "workspace",
+        "elementNamePattern": ["@app-template/**"]
+      }
+    ],
+    "groups": [
+      "builtin",
+      "react",
+      "external",
+      "workspace",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "style",
+      "unknown"
+    ]
+  },
+  "ignorePatterns": [
+    "pnpm-lock.yaml",
+    "**/.output/**",
+    "**/routeTree.gen.ts",
+    "**/prisma/generated/**",
+    "apps/web/stuff/**"
+  ]
+}

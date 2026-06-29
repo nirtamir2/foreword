@@ -1,0 +1,32 @@
+{
+  "name": "App Template",
+  "short_name": "App Template",
+  "id": "/",
+  "description": "A reusable full-stack application template.",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "start_url": "/",
+  "scope": "/",
+  "theme_color": "#0b1020",
+  "background_color": "#0b1020",
+  "categories": ["productivity"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-mask.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

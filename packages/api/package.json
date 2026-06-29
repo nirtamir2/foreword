@@ -1,0 +1,22 @@
+{
+  "name": "@app-template/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@app-template/auth": "workspace:*",
+    "@orpc/server": "catalog:"
+  },
+  "devDependencies": {
+    "@app-template/config": "workspace:*"
+  }
+}

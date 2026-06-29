@@ -1,0 +1,50 @@
+{
+  "name": "fullstack-app-template",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "ci": "pnpm run \"/^(lint|format|type-check).*/\"",
+    "db:backup": "pnpm --filter @app-template/db db:backup",
+    "db:generate": "pnpm --filter @app-template/db db:generate",
+    "db:migrate": "pnpm --filter @app-template/db db:migrate",
+    "db:push": "pnpm --filter @app-template/db db:push",
+    "db:studio": "pnpm --filter @app-template/db db:studio",
+    "dev": "pnpm -r dev",
+    "dev:web": "pnpm --filter web dev",
+    "format": "oxfmt --write .",
+    "lint": "eslint --fix",
+    "test": "vitest --passWithNoTests",
+    "type-check": "pnpm -r type-check"
+  },
+  "dependencies": {
+    "@app-template/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint-react/eslint-plugin": "catalog:",
+    "@app-template/api": "workspace:*",
+    "@app-template/config": "workspace:*",
+    "@app-template/db": "workspace:*",
+    "@nirtamir2/eslint-config": "catalog:",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-better-tailwindcss": "catalog:",
+    "eslint-plugin-classname-components": "catalog:",
+    "eslint-plugin-format": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "eslint-plugin-react-you-might-not-need-an-effect": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@app-template/db",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "db:backup": "node ./backupDb.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "type-check": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@app-template/env": "workspace:*",
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "dotenv": "catalog:",
+    "pg": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@app-template/config": "workspace:*",
+    "@types/pg": "catalog:",
+    "prisma": "catalog:"
+  }
+}
