@@ -6,7 +6,7 @@ Reusable infrastructure template for new products.
 
 - TypeScript monorepo with `pnpm` workspaces
 - React + TanStack Start + TanStack Router
-- Better Auth with Prisma/PostgreSQL
+- Better Auth with Prisma/PostgreSQL, Google OAuth, and OAuth proxy support
 - oRPC with TanStack Query helpers
 - Tailwind CSS and reusable UI primitives
 - Paraglide i18n with English and Hebrew locales
@@ -22,20 +22,29 @@ Reusable infrastructure template for new products.
    - `com.example.app`
    - `example.com`
 3. Copy `apps/web/.env.example` to `apps/web/.env` and fill real values.
-4. Install and generate the Prisma client:
+4. Create a Google OAuth client and set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+   Add this redirect URI in Google Cloud for each auth origin you use:
+
+```text
+https://your-domain.com/api/auth/callback/google
+```
+
+   For preview URLs, development tunnels, or Portless-style local URLs, set
+   `OAUTH_PROXY_PRODUCTION_URL` to the production auth origin registered with Google.
+5. Install and generate the Prisma client:
 
 ```bash
 pnpm install
 pnpm run db:generate
 ```
 
-5. Push the starter auth schema to your database:
+6. Push the starter auth schema to your database:
 
 ```bash
 pnpm run db:push
 ```
 
-6. Start the web app:
+7. Start the web app:
 
 ```bash
 pnpm run dev:web
@@ -56,7 +65,8 @@ Open [http://localhost:3001](http://localhost:3001).
 
 ## Template Notes
 
-- The starter database schema contains only Better Auth tables.
+- The starter database schema contains Better Auth tables, including the `account` table fields
+  Better Auth uses for OAuth provider IDs and tokens.
 - The API exposes `healthCheck` and `privateData` examples in `packages/api`.
 - Legal and accessibility pages are placeholders and must be customized before launch.
 - Android files are configured as a neutral TWA shell. Update `apps/android/twa-manifest.json`,

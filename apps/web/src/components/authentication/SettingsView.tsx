@@ -1,8 +1,21 @@
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
-import { useAuthenticate, useChangeEmail, useSignOut, useUpdateUser } from "@better-auth-ui/react";
+import {
+  providerIcons,
+  useAuth,
+  useAuthenticate,
+  useChangeEmail,
+  useLinkSocial,
+  useListAccounts,
+  useSignOut,
+  useUnlinkAccount,
+  useUpdateUser,
+} from "@better-auth-ui/react";
+import { getProviderName } from "@better-auth-ui/react/core";
 import { Link } from "@tanstack/react-router";
-import { LogOut, Mail, User } from "lucide-react";
+import type { Account } from "better-auth";
+import type { SocialProvider } from "better-auth/social-providers";
+import { Globe, Link2, Link2Off, LogOut, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import { getAuthErrorMessage } from "@/components/authentication/getAuthErrorMessage";
 import { Loader } from "@/components/layout/Loader";
@@ -156,6 +169,8 @@ function AccountSettingsView({
 }
 
 function SecuritySettingsView() {
+  const { baseURL, localization, socialProviders } = useAuth();
+  const { data: accounts, isPending: isLoadingAccounts } = useListAccounts();
   const { mutate: signOut, isPending } = useSignOut({
     onError: (error) => {
       toast.error(getAuthErrorMessage({ error }));
@@ -164,25 +179,134 @@ function SecuritySettingsView() {
       globalThis.location.href = getAuthPath({ view: "signIn" });
     },
   });
+  const linkedAccounts = accounts?.filter((account) => account.providerId !== "credential") ?? [];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{m.security()}</CardTitle>
-        <p className="text-sm text-app-text-muted">{m.settings_security_description()}</p>
-      </CardHeader>
-      <CardContent>
+    <div className="grid gap-4">
+      {socialProviders != null && socialProviders.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{localization.settings.linkedAccounts}</CardTitle>
+            <p className="text-sm text-app-text-muted">
+              {m.settings_linked_accounts_description()}
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isLoadingAccounts ? (
+              <Loader />
+            ) : (
+              <div className="flex flex-col gap-3">
+                {socialProviders.map((provider) => (
+                  <LinkedAccountRow
+                    key={provider}
+                    account={linkedAccounts.find((account) => account.providerId === provider)}
+                    baseURL={baseURL}
+                    provider={provider}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{m.security()}</CardTitle>
+          <p className="text-sm text-app-text-muted">{m.settings_security_description()}</p>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="secondary"
+            disabled={isPending}
+            onClick={() => {
+              signOut({});
+            }}
+          >
+            <LogOut className="size-4" />
+            {m.sign_out()}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function LinkedAccountRow({
+  account,
+  baseURL,
+  provider,
+}: {
+  account: Account | undefined;
+  baseURL: string;
+  provider: SocialProvider;
+}) {
+  const { localization } = useAuth();
+  const { mutate: linkSocial, isPending: isLinking } = useLinkSocial({
+    onError: (error) => {
+      toast.error(getAuthErrorMessage({ error }));
+    },
+  });
+  const { mutate: unlinkAccount, isPending: isUnlinking } = useUnlinkAccount({
+    onError: (error) => {
+      toast.error(getAuthErrorMessage({ error }));
+    },
+    onSuccess: () => {
+      toast.success(m.account_unlinked());
+    },
+  });
+  const ProviderIcon = providerIcons[provider] ?? Globe;
+  const providerName = getProviderName(provider);
+  const isBusy = isLinking || isUnlinking;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-app-border bg-app-surface-muted p-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-lg border border-app-border bg-app-surface-soft text-app-text">
+          <ProviderIcon className="size-4" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="text-sm font-medium text-app-text">{providerName}</div>
+          <div className="truncate text-xs text-app-text-muted">
+            {account == null
+              ? localization.settings.linkProvider.replace("{{provider}}", providerName)
+              : account.accountId}
+          </div>
+        </div>
+      </div>
+
+      {account == null ? (
         <Button
           variant="secondary"
-          disabled={isPending}
+          size="sm"
+          disabled={isBusy}
           onClick={() => {
-            signOut({});
+            const callbackBaseURL = baseURL.length > 0 ? baseURL : globalThis.location.origin;
+
+            linkSocial({
+              provider,
+              callbackURL: `${callbackBaseURL}${globalThis.location.pathname}`,
+            });
           }}
         >
-          <LogOut className="size-4" />
-          {m.sign_out()}
+          {isBusy ? null : <Link2 className="size-4" />}
+          {localization.settings.link}
         </Button>
-      </CardContent>
-    </Card>
+      ) : (
+        <Button
+          variant="subtle"
+          size="sm"
+          disabled={isBusy}
+          onClick={() => {
+            unlinkAccount({
+              providerId: account.providerId,
+            });
+          }}
+        >
+          {isBusy ? null : <Link2Off className="size-4" />}
+          {localization.settings.unlinkProvider.replace("{{provider}}", providerName)}
+        </Button>
+      )}
+    </div>
   );
 }

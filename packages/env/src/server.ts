@@ -9,6 +9,9 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
     CORS_ORIGIN: z.url(),
+    GOOGLE_CLIENT_ID: z.string().min(1),
+    GOOGLE_CLIENT_SECRET: z.string().min(1),
+    OAUTH_PROXY_PRODUCTION_URL: z.url().optional(),
     PORTLESS_URL: z.url().optional(),
     APP_URL: z
       .url()

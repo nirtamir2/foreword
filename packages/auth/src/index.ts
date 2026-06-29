@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { oAuthProxy } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import prisma from "@app-template/db";
 import { env } from "@app-template/env/server";
@@ -24,8 +25,20 @@ export const auth = betterAuth({
 
   baseURL: authURL,
   trustedOrigins,
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [tanstackStartCookies()],
+  plugins: [
+    tanstackStartCookies(),
+    oAuthProxy({
+      currentURL: authURL,
+      productionURL: env.OAUTH_PROXY_PRODUCTION_URL,
+    }),
+  ],
 });

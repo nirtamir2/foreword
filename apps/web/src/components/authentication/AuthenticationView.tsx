@@ -1,15 +1,19 @@
 import type { ReactNode, SyntheticEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
+  providerIcons,
   useAuth,
   useRequestPasswordReset,
   useResetPassword,
   useSignInEmail,
+  useSignInSocial,
   useSignOut,
   useSignUpEmail,
 } from "@better-auth-ui/react";
 import type { AuthView } from "@better-auth-ui/react/core";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { getProviderName } from "@better-auth-ui/react/core";
+import type { SocialProvider } from "better-auth/social-providers";
+import { Globe, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { getAuthErrorMessage } from "@/components/authentication/getAuthErrorMessage";
 import { Loader } from "@/components/layout/Loader";
@@ -85,8 +89,77 @@ function PendingIcon({ isPending }: { isPending: boolean }) {
   return isPending ? <Loader2 className="size-4 animate-spin" /> : null;
 }
 
+function AuthenticationDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="h-px flex-1 bg-app-border" />
+      <span className="text-xs font-semibold text-app-text-muted uppercase">{label}</span>
+      <div className="h-px flex-1 bg-app-border" />
+    </div>
+  );
+}
+
+function SocialProviderButtons({ isDisabled }: { isDisabled: boolean }) {
+  const { socialProviders } = useAuth();
+
+  return socialProviders != null && socialProviders.length > 0 ? (
+    <div className="flex flex-col gap-3">
+      {socialProviders.map((provider) => (
+        <SocialProviderButton key={provider} provider={provider} isDisabled={isDisabled} />
+      ))}
+    </div>
+  ) : null;
+}
+
+function SocialProviderButton({
+  provider,
+  isDisabled,
+}: {
+  provider: SocialProvider;
+  isDisabled: boolean;
+}) {
+  const { baseURL, localization, redirectTo } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { mutate: signInSocial, isPending } = useSignInSocial({
+    onError: (error) => {
+      toast.error(getAuthErrorMessage({ error }));
+      setIsRedirecting(false);
+    },
+    onSuccess: () => {
+      setIsRedirecting(true);
+    },
+  });
+
+  const ProviderIcon = providerIcons[provider] ?? Globe;
+  const isBusy = isDisabled || isPending || isRedirecting;
+  const continueWithLabel = localization.auth.continueWith.replace(
+    "{{provider}}",
+    getProviderName(provider),
+  );
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      fullWidth
+      disabled={isBusy}
+      onClick={() => {
+        const callbackBaseURL = baseURL.length > 0 ? baseURL : globalThis.location.origin;
+
+        signInSocial({
+          provider,
+          callbackURL: `${callbackBaseURL}${redirectTo}`,
+        });
+      }}
+    >
+      {isBusy ? <Loader2 className="size-4 animate-spin" /> : <ProviderIcon className="size-4" />}
+      {continueWithLabel}
+    </Button>
+  );
+}
+
 function SignInView() {
-  const { Link: AuthLink, localization, navigate, redirectTo } = useAuth();
+  const { Link: AuthLink, localization, navigate, redirectTo, socialProviders } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { mutate: signInEmail, isPending } = useSignInEmail({
@@ -107,6 +180,13 @@ function SignInView() {
 
   return (
     <AuthenticationCard title={localization.auth.signIn} description={m.auth_sign_in_description()}>
+      {socialProviders != null && socialProviders.length > 0 ? (
+        <>
+          <SocialProviderButtons isDisabled={isPending} />
+          <AuthenticationDivider label={localization.auth.or} />
+        </>
+      ) : null}
+
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
           <Label htmlFor="sign-in-email">{localization.auth.email}</Label>
@@ -162,7 +242,14 @@ function SignInView() {
 }
 
 function SignUpView() {
-  const { Link: AuthLink, emailAndPassword, localization, navigate, redirectTo } = useAuth();
+  const {
+    Link: AuthLink,
+    emailAndPassword,
+    localization,
+    navigate,
+    redirectTo,
+    socialProviders,
+  } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -200,6 +287,13 @@ function SignUpView() {
 
   return (
     <AuthenticationCard title={localization.auth.signUp} description={m.auth_sign_up_description()}>
+      {socialProviders != null && socialProviders.length > 0 ? (
+        <>
+          <SocialProviderButtons isDisabled={isPending} />
+          <AuthenticationDivider label={localization.auth.or} />
+        </>
+      ) : null}
+
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
           <Label htmlFor="sign-up-name">{localization.auth.name}</Label>

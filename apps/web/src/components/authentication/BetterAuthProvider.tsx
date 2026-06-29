@@ -33,7 +33,7 @@ export function BetterAuthProvider({ children }: Props) {
       }}
       localization={getAuthLocalization()}
       magicLink={false}
-      socialProviders={[]}
+      socialProviders={["google"]}
       redirectTo="/"
       Link={({ href, children: linkChildren, ...props }) => (
         <Link to={href} {...props}>
