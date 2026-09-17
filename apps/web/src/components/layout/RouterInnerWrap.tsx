@@ -16,7 +16,7 @@ export function RouterInnerWrap({ children }: Props): React.JSX.Element {
       {isNavigating ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-app-accent shadow-[0_0_18px_rgba(45,212,191,0.42)] motion-reduce:animate-none"
+          className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-app-accent shadow-[0_0_14px_var(--app-accent)] motion-reduce:animate-none"
         />
       ) : null}
       {children}

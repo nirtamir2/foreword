@@ -1,5 +1,3 @@
-"use client";
-
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
@@ -12,19 +10,20 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
-      className="group/tabs flex gap-2 data-[orientation=horizontal]:flex-col"
+      className="group/tabs flex gap-3 data-[orientation=horizontal]:flex-col"
       {...props}
     />
   );
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-xl p-1 text-app-text-muted group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col group-data-horizontal/tabs:h-10 data-[variant=line]:rounded-none",
+  "group/tabs-list relative inline-flex w-fit max-w-full items-center justify-start overflow-x-auto text-app-text-muted group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
   {
     variants: {
       variant: {
-        default: "border border-app-border bg-app-surface-soft",
-        line: "gap-1 bg-transparent",
+        default: "h-10 gap-1 rounded-xl border border-app-border bg-app-surface-muted p-1",
+        line: "h-10 gap-1 rounded-none border-b border-app-border bg-transparent",
+        pills: "h-auto flex-wrap gap-1.5 bg-transparent",
       },
     },
     defaultVariants: {
@@ -43,7 +42,15 @@ function TabsList({
       data-variant={variant}
       className={tabsListVariants({ variant })}
       {...props}
-    />
+    >
+      {props.children}
+      {variant === "default" ? (
+        <TabsPrimitive.Indicator className="absolute top-1/2 left-0 z-0 h-[calc(100%-0.5rem)] w-(--active-tab-width) translate-x-(--active-tab-left) -translate-y-1/2 rounded-lg bg-app-surface shadow-xs transition-[translate,width] duration-200 ease-(--ease-app-out) rtl:translate-x-(--active-tab-left)" />
+      ) : null}
+      {variant === "line" ? (
+        <TabsPrimitive.Indicator className="absolute bottom-0 left-0 z-0 h-0.5 w-(--active-tab-width) translate-x-(--active-tab-left) rounded-full bg-app-accent transition-[translate,width] duration-200 ease-(--ease-app-out)" />
+      ) : null}
+    </TabsPrimitive.List>
   );
 }
 
@@ -51,7 +58,7 @@ function TabsTrigger(props: Omit<TabsPrimitive.Tab.Props, "className">) {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
-      className="relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 py-1 text-xs font-semibold whitespace-nowrap text-app-text-muted transition-[background-color,color,border-color,transform] duration-150 ease-(--ease-app-out) group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start group-data-[variant=line]/tabs-list:bg-transparent group-data-vertical/tabs:py-[calc(--spacing(1.25))] after:absolute after:bg-app-accent after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 hover:text-app-text focus-visible:ring-2 focus-visible:ring-app-accent/50 focus-visible:outline-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:bg-app-accent data-active:text-app-canvas group-data-[variant=line]/tabs-list:data-active:bg-transparent group-data-[variant=line]/tabs-list:data-active:text-app-text group-data-[variant=line]/tabs-list:data-active:after:opacity-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+      className="relative z-10 inline-flex h-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap text-app-text-muted transition-[background-color,color,border-color,transform] duration-150 ease-(--ease-app-out) group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=pills]/tabs-list:h-8 group-data-[variant=pills]/tabs-list:rounded-full group-data-[variant=pills]/tabs-list:border-app-border group-data-[variant=pills]/tabs-list:bg-app-surface group-data-[variant=pills]/tabs-list:text-xs hover:text-app-text focus-visible:ring-2 focus-visible:ring-app-accent/40 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 data-active:text-app-text group-data-[variant=pills]/tabs-list:data-active:border-app-ink group-data-[variant=pills]/tabs-list:data-active:bg-app-ink group-data-[variant=pills]/tabs-list:data-active:text-app-canvas [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       {...props}
     />
   );

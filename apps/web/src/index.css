@@ -4,68 +4,115 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Foreword theme: warm paper canvas, ink typography, one indigo accent used sparingly,
+  amber marker highlights, and semantic greens/ambers/reds for learning states.
+*/
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.5rem;
-
-  --app-canvas: #0b1020;
-  --app-surface: #111827;
-  --app-surface-raised: #172033;
-  --app-surface-soft: rgba(255, 255, 255, 0.055);
-  --app-surface-muted: rgba(255, 255, 255, 0.085);
-  --app-border: rgba(255, 255, 255, 0.12);
-  --app-border-strong: rgba(255, 255, 255, 0.22);
-  --app-text: #f8fafc;
-  --app-text-muted: rgba(248, 250, 252, 0.68);
-  --app-text-subtle: rgba(248, 250, 252, 0.46);
-  --app-blue: #60a5fa;
-  --app-accent: #2dd4bf;
-  --app-red: #fb7185;
-  --app-shadow-raised: 0 18px 48px rgba(0, 0, 0, 0.3);
-  --app-shadow-pressed: 0 10px 24px rgba(45, 212, 191, 0.18);
+  --app-canvas: oklch(0.986 0.004 85);
+  --app-surface: oklch(1 0 0);
+  --app-surface-raised: oklch(1 0 0);
+  --app-surface-soft: oklch(0.977 0.005 85);
+  --app-surface-muted: oklch(0.957 0.006 85);
+  --app-border: oklch(0.915 0.008 80);
+  --app-border-strong: oklch(0.845 0.01 80);
+  --app-text: oklch(0.215 0.022 275);
+  --app-text-muted: oklch(0.46 0.02 275);
+  --app-text-subtle: oklch(0.6 0.016 275);
+  --app-accent: oklch(0.5 0.215 278);
+  --app-accent-strong: oklch(0.43 0.215 278);
+  --app-accent-soft: oklch(0.955 0.03 278);
+  --app-on-accent: oklch(0.99 0 0);
+  --app-highlight: oklch(0.88 0.14 88);
+  --app-highlight-soft: oklch(0.965 0.06 90);
+  --app-success: oklch(0.6 0.15 155);
+  --app-success-soft: oklch(0.955 0.045 155);
+  --app-warning: oklch(0.7 0.16 65);
+  --app-warning-soft: oklch(0.965 0.05 75);
+  --app-red: oklch(0.58 0.22 27);
+  --app-red-soft: oklch(0.96 0.03 27);
+  --app-ink: oklch(0.215 0.022 275);
+  --app-paper: oklch(0.97 0.012 85);
+  --app-blue: var(--app-accent);
+  --app-shadow-raised: 0 1px 2px rgba(23, 23, 43, 0.05), 0 12px 32px -16px rgba(23, 23, 43, 0.2);
+  --app-shadow-floating: 0 2px 6px rgba(23, 23, 43, 0.06), 0 24px 56px -20px rgba(23, 23, 43, 0.3);
+  --app-shadow-pressed: 0 8px 18px -8px oklch(0.5 0.215 278 / 0.55);
   --ease-app-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --background: var(--app-canvas);
+  --foreground: var(--app-text);
+  --card: var(--app-surface);
+  --card-foreground: var(--app-text);
+  --popover: var(--app-surface-raised);
+  --popover-foreground: var(--app-text);
+  --primary: var(--app-accent);
+  --primary-foreground: var(--app-on-accent);
+  --secondary: var(--app-surface-muted);
+  --secondary-foreground: var(--app-text);
+  --muted: var(--app-surface-muted);
+  --muted-foreground: var(--app-text-muted);
+  --accent: var(--app-accent-soft);
+  --accent-foreground: var(--app-accent-strong);
+  --destructive: var(--app-red);
+  --border: var(--app-border);
+  --input: var(--app-border);
+  --ring: var(--app-accent);
+  --radius: 0.75rem;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --app-canvas: oklch(0.17 0.02 275);
+  --app-surface: oklch(0.21 0.022 275);
+  --app-surface-raised: oklch(0.24 0.024 275);
+  --app-surface-soft: oklch(0.23 0.022 275);
+  --app-surface-muted: oklch(0.27 0.024 275);
+  --app-border: oklch(0.32 0.024 275);
+  --app-border-strong: oklch(0.42 0.026 275);
+  --app-text: oklch(0.97 0.005 85);
+  --app-text-muted: oklch(0.75 0.015 275);
+  --app-text-subtle: oklch(0.6 0.015 275);
+  --app-accent: oklch(0.72 0.16 278);
+  --app-accent-strong: oklch(0.8 0.13 278);
+  --app-accent-soft: oklch(0.3 0.07 278);
+  --app-on-accent: oklch(0.15 0.03 278);
+  --app-highlight: oklch(0.8 0.14 88);
+  --app-highlight-soft: oklch(0.32 0.06 88);
+  --app-success: oklch(0.72 0.15 155);
+  --app-success-soft: oklch(0.28 0.05 155);
+  --app-warning: oklch(0.78 0.15 70);
+  --app-warning-soft: oklch(0.3 0.05 70);
+  --app-red: oklch(0.7 0.19 25);
+  --app-red-soft: oklch(0.3 0.06 25);
+  --app-ink: oklch(0.97 0.005 85);
+  --app-paper: oklch(0.25 0.02 80);
+  --app-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px -18px rgba(0, 0, 0, 0.6);
+  --app-shadow-floating: 0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px -20px rgba(0, 0, 0, 0.7);
+
+  --background: var(--app-canvas);
+  --foreground: var(--app-text);
+  --card: var(--app-surface);
+  --card-foreground: var(--app-text);
+  --popover: var(--app-surface-raised);
+  --popover-foreground: var(--app-text);
+  --primary: var(--app-accent);
+  --primary-foreground: var(--app-on-accent);
+  --secondary: var(--app-surface-muted);
+  --secondary-foreground: var(--app-text);
+  --muted: var(--app-surface-muted);
+  --muted-foreground: var(--app-text-muted);
+  --accent: var(--app-accent-soft);
+  --accent-foreground: var(--app-accent-strong);
+  --destructive: var(--app-red);
+  --border: var(--app-border);
+  --input: var(--app-border);
+  --ring: var(--app-accent);
 }
 
 @theme inline {
-  --font-sans: "Inter Variable", sans-serif;
+  --font-sans: "Inter", "Heebo", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", "Frank Ruhl Libre", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -84,10 +131,11 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
 
   --color-app-canvas: var(--app-canvas);
   --color-app-surface: var(--app-surface);
@@ -99,9 +147,67 @@
   --color-app-text: var(--app-text);
   --color-app-text-muted: var(--app-text-muted);
   --color-app-text-subtle: var(--app-text-subtle);
-  --color-app-blue: var(--app-blue);
   --color-app-accent: var(--app-accent);
+  --color-app-accent-strong: var(--app-accent-strong);
+  --color-app-accent-soft: var(--app-accent-soft);
+  --color-app-on-accent: var(--app-on-accent);
+  --color-app-highlight: var(--app-highlight);
+  --color-app-highlight-soft: var(--app-highlight-soft);
+  --color-app-success: var(--app-success);
+  --color-app-success-soft: var(--app-success-soft);
+  --color-app-warning: var(--app-warning);
+  --color-app-warning-soft: var(--app-warning-soft);
   --color-app-red: var(--app-red);
+  --color-app-red-soft: var(--app-red-soft);
+  --color-app-ink: var(--app-ink);
+  --color-app-paper: var(--app-paper);
+  --color-app-blue: var(--app-blue);
+
+  --animate-rise: rise 0.5s var(--ease-app-out) both;
+  --animate-pop: pop 0.35s var(--ease-app-out) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-marker: marker 0.6s var(--ease-app-out) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes marker {
+    from {
+      background-size: 0% 100%;
+    }
+    to {
+      background-size: 100% 100%;
+    }
+  }
 }
 
 @layer base {
@@ -111,6 +217,9 @@
 
   html {
     @apply font-sans;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
@@ -121,22 +230,53 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
+  ::selection {
+    background: var(--app-highlight);
+    color: var(--app-ink);
+  }
 }
 
 @layer utilities {
   .focus-ring {
-    @apply focus-visible:ring-2 focus-visible:ring-app-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-canvas focus-visible:outline-none;
+    @apply focus-visible:ring-2 focus-visible:ring-app-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-app-canvas focus-visible:outline-none;
+  }
+
+  /* Marker-pen highlight for key words, drawn behind the text. */
+  .marker {
+    background-image: linear-gradient(
+      transparent 55%,
+      var(--app-highlight) 55%,
+      var(--app-highlight) 92%,
+      transparent 92%
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding-inline: 0.08em;
+  }
+
+  .marker-animated {
+    animation: var(--animate-marker);
+    animation-delay: 0.4s;
+    background-size: 0% 100%;
+  }
+
+  .paper-grid {
+    background-image:
+      linear-gradient(to right, oklch(0.215 0.022 275 / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.215 0.022 275 / 0.045) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
   .shimmer {
     background: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.05) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.05) 100%
+      var(--app-surface-muted) 0%,
+      var(--app-surface-soft) 50%,
+      var(--app-surface-muted) 100%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.6s infinite;
   }
 
   @keyframes shimmer {
@@ -146,6 +286,28 @@
     100% {
       background-position: 200% 0;
     }
+  }
+
+  .flip-card {
+    transform-style: preserve-3d;
+    transition: transform 0.55s var(--ease-app-out);
+  }
+
+  .flip-card-face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .flip-card-back {
+    transform: rotateY(180deg);
+  }
+
+  .flip-card-flipped {
+    transform: rotateY(180deg);
+  }
+
+  .perspective-deep {
+    perspective: 1600px;
   }
 
   @media (prefers-reduced-motion: reduce) {

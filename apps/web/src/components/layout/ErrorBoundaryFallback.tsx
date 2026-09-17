@@ -13,10 +13,10 @@ export function ErrorBoundaryFallback({ error, reset }: ErrorComponentProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-app-canvas p-4">
       <Card>
         <CardHeader>
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-app-red/10">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-app-red-soft">
             <AlertTriangle className="size-6 text-app-red" />
           </div>
           <div className="text-center">

@@ -1,5 +1,3 @@
-"use client";
-
 import type * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { cva } from "class-variance-authority";
@@ -12,16 +10,16 @@ const selectTriggerVariants = cva(
     variants: {
       variant: {
         default:
-          "w-fit rounded-lg border border-app-border bg-app-surface-soft py-2 ps-3 pe-2 text-sm text-app-text focus-visible:border-app-accent/80 focus-visible:ring-2 focus-visible:ring-app-accent/25 aria-invalid:border-app-red aria-invalid:ring-2 aria-invalid:ring-app-red/20 data-placeholder:text-app-text-subtle",
-        full: "w-full cursor-pointer appearance-none rounded-lg border border-app-border bg-app-surface-soft px-4 text-app-text focus:border-app-accent/80 focus:shadow-[0_0_0_3px_rgba(45,212,191,0.18)]",
+          "w-fit rounded-lg border border-app-border bg-app-surface py-2 ps-3 pe-2 text-sm text-app-text shadow-xs hover:border-app-border-strong focus-visible:border-app-accent focus-visible:ring-3 focus-visible:ring-app-accent/20 aria-invalid:border-app-red aria-invalid:ring-3 aria-invalid:ring-app-red/20 data-placeholder:text-app-text-subtle",
+        full: "w-full cursor-pointer appearance-none rounded-lg border border-app-border bg-app-surface ps-3 pe-2 text-sm text-app-text shadow-xs hover:border-app-border-strong focus-visible:border-app-accent focus-visible:ring-3 focus-visible:ring-app-accent/20 data-placeholder:text-app-text-subtle",
         compact:
-          "rounded-lg border border-app-border bg-app-surface-soft py-1.5 ps-3 pe-1.5 text-xs font-medium text-app-text hover:bg-app-surface-muted focus:border-app-accent/70 focus:bg-app-surface-muted focus:ring-2 focus:ring-app-accent/25",
+          "rounded-lg border border-app-border bg-app-surface py-1.5 ps-3 pe-1.5 text-xs font-medium text-app-text shadow-xs hover:border-app-border-strong focus-visible:border-app-accent focus-visible:ring-3 focus-visible:ring-app-accent/20",
       },
       size: {
         sm: "h-8 rounded-md",
         default: "h-10",
-        md: "h-12",
-        lg: "h-14",
+        md: "h-11",
+        lg: "h-12",
       },
     },
     defaultVariants: {
@@ -78,10 +76,10 @@ function SelectContent({
   children,
   header = null,
   side = "bottom",
-  sideOffset = 4,
-  align = "center",
+  sideOffset = 6,
+  align = "start",
   alignOffset = 0,
-  alignItemWithTrigger = true,
+  alignItemWithTrigger = false,
   ...props
 }: SelectContentProps) {
   return (
@@ -97,7 +95,7 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
-          className="relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-app-border bg-app-surface-raised p-1 text-app-text shadow-(--app-shadow-raised) duration-150 ease-(--ease-app-out) data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-1 data-[side=inline-end]:slide-in-from-left-1 data-[side=inline-start]:slide-in-from-right-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+          className="relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-app-border bg-app-surface-raised p-1 text-app-text shadow-(--app-shadow-floating) duration-150 ease-(--ease-app-out) data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           {...props}
         >
           {header == null ? null : (
@@ -126,7 +124,7 @@ function SelectItem({ children, ...props }: Omit<SelectPrimitive.Item.Props, "cl
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      className="relative flex w-full cursor-default items-center gap-2 rounded-lg py-2 ps-2 pe-8 text-sm text-app-text-muted outline-hidden select-none focus:bg-app-surface-muted focus:text-app-text data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+      className="relative flex w-full cursor-default items-center gap-2 rounded-lg py-2 ps-2.5 pe-8 text-sm text-app-text-muted outline-hidden select-none focus:bg-app-surface-muted focus:text-app-text data-selected:text-app-text data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       {...props}
     >
       <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
@@ -134,7 +132,7 @@ function SelectItem({ children, ...props }: Omit<SelectPrimitive.Item.Props, "cl
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute inset-e-2 flex size-4 items-center justify-center" />
+          <span className="pointer-events-none absolute inset-e-2 flex size-4 items-center justify-center text-app-accent" />
         }
       >
         <CheckIcon className="pointer-events-none" />
@@ -147,7 +145,7 @@ function SelectSeparator(props: Omit<SelectPrimitive.Separator.Props, "className
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className="pointer-events-none -mx-1 h-px bg-app-border"
+      className="pointer-events-none -mx-1 my-1 h-px bg-app-border"
       {...props}
     />
   );

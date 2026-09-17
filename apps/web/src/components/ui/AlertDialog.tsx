@@ -17,7 +17,7 @@ function AlertDialogBackdrop(props: Omit<AlertDialogPrimitive.Backdrop.Props, "c
   return (
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-backdrop"
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity duration-200 ease-(--ease-app-out) data-ending-style:opacity-0 data-starting-style:opacity-0"
+      className="fixed inset-0 z-50 bg-app-ink/40 backdrop-blur-[2px] transition-opacity duration-200 ease-(--ease-app-out) data-ending-style:opacity-0 data-starting-style:opacity-0"
       {...props}
     />
   );
@@ -32,7 +32,7 @@ function AlertDialogPopup({
       <AlertDialogBackdrop />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-popup"
-        className="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-1/2 rounded-xl border border-app-border bg-app-surface-raised p-6 text-app-text shadow-(--app-shadow-raised) transition-[transform,opacity] duration-200 ease-(--ease-app-out) data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0"
+        className="fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-1/2 rounded-2xl border border-app-border bg-app-surface-raised p-6 text-app-text shadow-(--app-shadow-floating) transition-[transform,opacity] duration-200 ease-(--ease-app-out) data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0"
         {...props}
       >
         {children}
@@ -45,7 +45,7 @@ function AlertDialogTitle(props: Omit<AlertDialogPrimitive.Title.Props, "classNa
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className="text-lg font-bold text-app-text"
+      className="text-lg font-semibold tracking-tight text-app-text"
       {...props}
     />
   );
@@ -55,7 +55,7 @@ function AlertDialogDescription(props: Omit<AlertDialogPrimitive.Description.Pro
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className="mt-2 text-sm text-app-text-muted"
+      className="pt-2 text-sm/relaxed text-app-text-muted"
       {...props}
     />
   );
@@ -66,7 +66,13 @@ function AlertDialogClose(props: AlertDialogPrimitive.Close.Props) {
 }
 
 function AlertDialogFooter(props: Omit<React.HTMLAttributes<HTMLDivElement>, "className">) {
-  return <div data-slot="alert-dialog-footer" className="mt-6 flex justify-end gap-3" {...props} />;
+  return (
+    <div
+      data-slot="alert-dialog-footer"
+      className="flex flex-col-reverse gap-2 pt-6 sm:flex-row sm:justify-end"
+      {...props}
+    />
+  );
 }
 
 export {

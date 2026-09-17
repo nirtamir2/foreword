@@ -11,11 +11,15 @@ export const env = createEnv({
     CORS_ORIGIN: z.url(),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
+    /** Gemini API key used to turn ranked candidates into vocabulary cards. */
+    AI_API_KEY: z.string().min(1).optional(),
+    AI_MODEL: z.string().min(1).default("gemini-3.1-flash-lite"),
+    /** fal.ai key used to generate short teaching clips for a word. */
+    FAL_KEY: z.string().min(1).optional(),
+    FAL_VIDEO_MODEL: z.string().min(1).default("fal-ai/ltx-2.3/text-to-video/fast"),
     OAUTH_PROXY_PRODUCTION_URL: z.url().optional(),
     PORTLESS_URL: z.url().optional(),
-    APP_URL: z
-      .url()
-      .default(process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "https://localhost:3001"),
+    APP_URL: z.url().default(process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "https://localhost:3001"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: process.env,

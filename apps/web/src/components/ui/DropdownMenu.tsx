@@ -38,7 +38,7 @@ function DropdownMenuContent({
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
-          className="z-50 max-h-(--available-height) w-(--anchor-width) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-app-border bg-app-surface-raised p-1.5 text-app-text opacity-100 shadow-(--app-shadow-raised) duration-150 ease-(--ease-app-out) data-ending-style:transition-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:scale-95 data-closed:opacity-0"
+          className="z-50 max-h-(--available-height) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-app-border bg-app-surface-raised p-1.5 text-app-text shadow-(--app-shadow-floating) duration-150 ease-(--ease-app-out) data-ending-style:transition-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:scale-95 data-closed:opacity-0"
           {...props}
         />
       </MenuPrimitive.Positioner>
@@ -76,7 +76,7 @@ function DropdownMenuItem({
         "group/dropdown-menu-item relative flex cursor-default items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         variant === "default" &&
           "text-app-text-muted focus:bg-app-surface-muted focus:text-app-text",
-        variant === "destructive" && "text-app-red focus:bg-app-red/15 focus:text-app-red",
+        variant === "destructive" && "text-app-red focus:bg-app-red-soft focus:text-app-red",
       )}
       {...props}
     />

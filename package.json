@@ -27,10 +27,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "catalog:",
     "@app-template/api": "workspace:*",
     "@app-template/config": "workspace:*",
     "@app-template/db": "workspace:*",
+    "@eslint-react/eslint-plugin": "catalog:",
     "@nirtamir2/eslint-config": "catalog:",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",

@@ -31,12 +31,18 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
           name: "viewport",
           content: "width=device-width, initial-scale=1, viewport-fit=cover",
         },
-        { name: "theme-color", content: "#0b1020" },
+        { name: "theme-color", content: "#fbfaf7" },
         { name: "apple-mobile-web-app-title", content: appName() },
         ...seo.meta,
       ],
       links: [
         { rel: "stylesheet", href: styles },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Heebo:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap",
+        },
         { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
         { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
         { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
@@ -57,7 +63,7 @@ function RootDocument() {
       <head>
         <HeadContent />
       </head>
-      <body className="bg-app-canvas text-app-text antialiased">
+      <body className="min-h-screen bg-app-canvas text-app-text antialiased">
         <Outlet />
         <Toaster richColors />
         <script src="/register-service-worker.js" defer />

@@ -3,14 +3,14 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 
 export const textareaVariants = cva(
-  "flex field-sizing-content min-h-24 w-full resize-none rounded-lg border bg-app-surface-soft px-4 py-3 text-sm text-app-text transition-[border-color,background-color,box-shadow] duration-150 ease-(--ease-app-out) outline-none placeholder:text-app-text-subtle disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-app-red aria-invalid:ring-2 aria-invalid:ring-app-red/20",
+  "flex field-sizing-content min-h-20 w-full resize-none rounded-lg border bg-app-surface px-3 py-2.5 text-sm text-app-text shadow-xs transition-[border-color,background-color,box-shadow] duration-150 ease-(--ease-app-out) outline-none placeholder:text-app-text-subtle disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-app-red aria-invalid:ring-3 aria-invalid:ring-app-red/20",
   {
     variants: {
       tone: {
         neutral:
-          "border-app-border focus-visible:border-app-accent/80 focus-visible:ring-2 focus-visible:ring-app-accent/25",
+          "border-app-border hover:border-app-border-strong focus-visible:border-app-accent focus-visible:ring-3 focus-visible:ring-app-accent/20",
         danger:
-          "border-app-red/35 bg-app-red/10 focus-visible:border-app-red/80 focus-visible:ring-2 focus-visible:ring-app-red/25",
+          "border-app-red/35 bg-app-red-soft focus-visible:border-app-red focus-visible:ring-3 focus-visible:ring-app-red/20",
       },
     },
     defaultVariants: {

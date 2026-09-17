@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User } from "lucide-react";
+import { Library, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ export function UserMenu() {
   if (session == null) {
     return (
       <Link to="/auth/login">
-        <Button variant="secondary" size="sm">
+        <Button variant="outline" size="sm">
           <User className="size-4" />
           {m.sign_in()}
         </Button>
@@ -36,8 +36,10 @@ export function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="secondary" size="sm" />}>
-        <User className="size-4" />
+      <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+        <span className="flex size-5 items-center justify-center rounded-full bg-app-accent-soft text-[0.65rem] font-bold text-app-accent-strong uppercase">
+          {session.user.name.trim().charAt(0)}
+        </span>
         <span className="max-w-24 truncate sm:max-w-40" dir="auto" title={session.user.name}>
           {session.user.name}
         </span>
@@ -46,7 +48,7 @@ export function UserMenu() {
         <DropdownMenuGroup>
           <DropdownMenuLabel>{m.account()}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+          <DropdownMenuItem disabled>{session.user.email}</DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
               void navigate({ to: getSettingsPath({ view: "account" }) });
@@ -54,6 +56,14 @@ export function UserMenu() {
           >
             <Settings className="size-4" />
             {m.account()}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              void navigate({ to: "/library" });
+            }}
+          >
+            <Library className="size-4" />
+            {m.nav_library()}
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"

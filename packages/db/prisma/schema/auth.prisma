@@ -8,6 +8,12 @@ model User {
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  books         Book[]
+  candidates    VocabularyCandidate[]
+  cards         VocabCard[]
+  reviewStates  ReviewState[]
+  studyReviews  StudyReview[]
+  cardVideos    VocabCardVideo[]
 
   @@unique([email])
   @@map("user")

@@ -12,8 +12,8 @@ export function PageBackButton({ onBack }: Props) {
   const BackIcon = textDirection === "rtl" ? ArrowRight : ArrowLeft;
 
   return (
-    <Button aria-label={m.back()} variant="ghost" size="sm" onClick={onBack}>
-      <BackIcon className="size-5" />
+    <Button aria-label={m.back()} variant="ghost" size="icon-sm" onClick={onBack}>
+      <BackIcon className="size-4" />
     </Button>
   );
 }

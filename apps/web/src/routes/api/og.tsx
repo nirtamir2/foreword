@@ -70,8 +70,8 @@ async function handleGet({ request }: { request: Request }) {
   return new ImageResponse(
     <div
       style={{
-        background: "linear-gradient(135deg, #0b1020 0%, #141a2f 55%, #10241f 100%)",
-        color: "#f8fafc",
+        background: "linear-gradient(135deg, #fbfaf7 0%, #f3f0e8 60%, #ebe6f7 100%)",
+        color: "#1f2033",
         display: "flex",
         flexDirection: "column",
         fontFamily: "Inter",
@@ -84,7 +84,7 @@ async function handleGet({ request }: { request: Request }) {
     >
       <div
         style={{
-          color: "#2dd4bf",
+          color: "#5b4fd6",
           display: "flex",
           fontSize: "26px",
           fontWeight: 700,
@@ -92,7 +92,7 @@ async function handleGet({ request }: { request: Request }) {
           textTransform: "uppercase",
         }}
       >
-        {m.template_badge()}
+        {m.hero_badge()}
       </div>
       <div
         style={{
@@ -109,7 +109,7 @@ async function handleGet({ request }: { request: Request }) {
       {ogQuery.subtitle == null ? null : (
         <div
           style={{
-            color: "rgba(248,250,252,0.72)",
+            color: "rgba(31,32,51,0.7)",
             display: "flex",
             fontSize: "30px",
             lineHeight: 1.35,

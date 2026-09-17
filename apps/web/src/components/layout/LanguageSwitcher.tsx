@@ -31,9 +31,7 @@ export function LanguageSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button aria-label={m.language()} variant="secondary" size="sm" />}
-      >
+      <DropdownMenuTrigger render={<Button aria-label={m.language()} variant="ghost" size="sm" />}>
         <Languages className="size-4" />
         <span>{currentLocaleLabel}</span>
       </DropdownMenuTrigger>

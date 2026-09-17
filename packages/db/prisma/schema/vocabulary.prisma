@@ -1,0 +1,217 @@
+enum BookLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum SourceFormat {
+  EPUB
+  PDF
+}
+
+enum PositionType {
+  START
+  CHAPTER
+  PAGE
+  PERCENT
+}
+
+enum AnalysisStatus {
+  PENDING
+  ANALYZING
+  READY
+}
+
+enum PhraseType {
+  WORD
+  COLLOCATION
+  PHRASAL_VERB
+  IDIOM
+  PROPER_NOUN
+}
+
+enum ReviewStatus {
+  NEW
+  LEARNING
+  KNOWN
+}
+
+enum StudyMode {
+  FLASHCARD
+  MCQ
+  RECALL
+}
+
+enum ReviewResult {
+  KNOWN
+  STILL_LEARNING
+  CORRECT
+  INCORRECT
+}
+
+enum CandidateKind {
+  WORD
+  PHRASE
+}
+
+enum CandidateStatus {
+  PENDING
+  REFINED
+  SKIPPED
+  DELETED
+}
+
+enum VideoStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+/// A user's uploaded book. Only metadata is stored here; the book is parsed in the
+/// browser and neither the file nor the full text ever reaches the server.
+model Book {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  author         String?
+  bookLanguage   String
+  nativeLanguage String
+  level          BookLevel
+  sourceFormat   SourceFormat
+  contentHash    String
+  totalChapters  Int?
+  totalWords     Int?
+  positionType   PositionType   @default(START)
+  positionValue  Int?
+  analysisStatus AnalysisStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  cards          VocabCard[]
+  candidates     VocabularyCandidate[]
+
+  @@unique([userId, contentHash])
+  @@index([userId, updatedAt])
+  @@map("book")
+}
+
+/// Locally ranked vocabulary candidate. Holds scoring metadata and short snippets only.
+model VocabularyCandidate {
+  id                String          @id @default(cuid())
+  bookId            String
+  book              Book            @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  surface           String
+  normalized        String
+  kind              CandidateKind
+  snippets          Json            @default("[]")
+  localDifficulty   Float
+  bookFrequency     Int
+  firstChapterIndex Int
+  earliness         Float
+  usefulness        Float
+  storyImportance   Float
+  frequencyWeight   Float
+  priorityScore     Float
+  status            CandidateStatus @default(PENDING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([bookId, normalized])
+  @@index([userId, status])
+  @@index([bookId, status, priorityScore])
+  @@map("vocabulary_candidate")
+}
+
+/// A study card for one word or phrase in a book.
+model VocabCard {
+  id                String          @id @default(cuid())
+  bookId            String
+  book              Book            @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headword          String
+  displayForm       String
+  lemma             String?
+  isPhrase          Boolean         @default(false)
+  phraseType        PhraseType?
+  partOfSpeech      String?
+  translation       String
+  explanation       String
+  examples          Json            @default("[]")
+  difficulty        Float
+  usefulness        Float
+  bookFrequency     Int
+  firstChapterIndex Int
+  priorityScore     Float
+  aiModel           String?
+  edited            Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  reviewState       ReviewState?
+  reviews           StudyReview[]
+  video             VocabCardVideo?
+
+  @@unique([bookId, headword])
+  @@index([userId])
+  @@index([bookId, priorityScore])
+  @@map("vocab_card")
+}
+
+/// Per-card learning state. One row per card.
+model ReviewState {
+  id             String       @id @default(cuid())
+  cardId         String       @unique
+  card           VocabCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status         ReviewStatus @default(NEW)
+  timesSeen      Int          @default(0)
+  timesCorrect   Int          @default(0)
+  timesIncorrect Int          @default(0)
+  lastReviewedAt DateTime?
+  knownAt        DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId, status])
+  @@map("review_state")
+}
+
+/// Append-only log of every study answer.
+model StudyReview {
+  id        String       @id @default(cuid())
+  cardId    String
+  card      VocabCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode      StudyMode
+  result    ReviewResult
+  createdAt DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([cardId])
+  @@map("study_review")
+}
+
+/// A short generated teaching clip for a card.
+model VocabCardVideo {
+  id        String      @id @default(cuid())
+  cardId    String      @unique
+  card      VocabCard   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    VideoStatus @default(QUEUED)
+  jobId     String?
+  model     String
+  prompt    String
+  videoUrl  String?
+  error     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@map("vocab_card_video")
+}

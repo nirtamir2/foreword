@@ -35,10 +35,7 @@ function AccessibilityStatementPage() {
   ] as const;
 
   return (
-    <PageLayout
-      title={m.accessibility_statement()}
-      subtitle={m.accessibility_statement_subtitle()}
-    >
+    <PageLayout title={m.accessibility_statement()} subtitle={m.accessibility_statement_subtitle()}>
       <article className="mx-auto flex max-w-3xl flex-col gap-4">
         <p className="text-sm text-app-text-subtle">{m.accessibility_statement_last_updated()}</p>
         <p className="text-base/7 text-app-text-muted">{m.accessibility_statement_intro()}</p>

@@ -3,19 +3,24 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 
 export const surfaceVariants = cva(
-  "overflow-hidden border text-app-text shadow-(--app-shadow-raised) transition-[transform,border-color,background-color,box-shadow] duration-180 ease-(--ease-app-out)",
+  "overflow-hidden border text-app-text transition-[transform,border-color,background-color,box-shadow] duration-180 ease-(--ease-app-out)",
   {
     variants: {
       tone: {
-        neutral: "border-app-border bg-app-surface-soft",
-        raised: "border-app-border bg-app-surface-raised",
-        accent: "border-app-accent/35 bg-app-accent/10",
-        danger: "border-app-red/35 bg-app-red/10",
+        neutral: "border-app-border bg-app-surface shadow-(--app-shadow-raised)",
+        soft: "border-app-border bg-app-surface-soft",
+        raised: "border-app-border bg-app-surface-raised shadow-(--app-shadow-floating)",
+        accent: "border-app-accent/15 bg-app-accent-soft",
+        success: "border-app-success/20 bg-app-success-soft",
+        warning: "border-app-warning/25 bg-app-warning-soft",
+        danger: "border-app-red/20 bg-app-red-soft",
+        paper: "border-app-border bg-app-paper",
+        ink: "border-app-ink bg-app-ink text-app-canvas",
       },
       radius: {
         sm: "rounded-lg",
-        default: "rounded-lg",
-        lg: "rounded-xl",
+        default: "rounded-xl",
+        lg: "rounded-2xl",
       },
       padding: {
         none: "p-0",
@@ -24,7 +29,7 @@ export const surfaceVariants = cva(
         lg: "p-6 md:p-8",
       },
       interactive: {
-        true: "cursor-pointer hover:border-app-border-strong hover:bg-app-surface-muted active:scale-[0.97]",
+        true: "cursor-pointer hover:border-app-border-strong hover:shadow-(--app-shadow-floating) active:scale-[0.99]",
         false: "",
       },
       align: {

@@ -1,5 +1,3 @@
-"use client";
-
 import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
 
 function Separator({
@@ -10,7 +8,7 @@ function Separator({
     <SeparatorPrimitive
       data-slot="separator"
       orientation={orientation}
-      className="shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:self-stretch"
+      className="shrink-0 bg-app-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:self-stretch"
       {...props}
     />
   );

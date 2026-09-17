@@ -7,6 +7,8 @@ const prisma = new PrismaClient({ adapter });
 
 export default prisma;
 
+export type Db = typeof prisma;
+
 export type * from "../prisma/generated/enums";
 export type * from "../prisma/generated/models";
 export type * from "../prisma/generated/commonInputTypes";

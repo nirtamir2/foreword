@@ -1,15 +1,15 @@
 {
-  "name": "App Template",
-  "short_name": "App Template",
+  "name": "Foreword",
+  "short_name": "Foreword",
   "id": "/",
-  "description": "A reusable full-stack application template.",
+  "description": "Learn the words before you open the book. Upload an EPUB or PDF and prepare its vocabulary privately in your browser.",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "start_url": "/",
   "scope": "/",
-  "theme_color": "#0b1020",
-  "background_color": "#0b1020",
-  "categories": ["productivity"],
+  "theme_color": "#fbfaf7",
+  "background_color": "#fbfaf7",
+  "categories": ["education", "productivity"],
   "lang": "en",
   "icons": [
     {
