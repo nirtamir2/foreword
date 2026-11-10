@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import type { CandidateKind } from "@app-template/db";
 import type { Context } from "../context";
 import { protectedProcedure } from "../index";
 import { toStringArray } from "../vocabulary/examples";
+import { nextAnalysisStatus } from "../vocabulary/nextAnalysisStatus";
 import { isProviderWideAiError, normalizeAiError } from "../vocabulary/normalizeAiError";
 import {
   demotedPriority,
@@ -11,6 +13,7 @@ import {
   planCandidateRefinement,
 } from "../vocabulary/planCandidateRefinement";
 import type { StoredCandidate } from "../vocabulary/planCandidateRefinement";
+import { planUnresolvedCandidates } from "../vocabulary/planUnresolvedCandidates";
 import { refineInBatches } from "../vocabulary/refineInBatches";
 
 const candidateSchema = z.object({
@@ -85,6 +88,233 @@ async function knownFormsForLanguage({
     }
   }
   return forms;
+}
+
+/** How long one refineNext call may own its candidates before another call can take them over. */
+const REFINE_LEASE_MS = 10 * 60 * 1000;
+
+/**
+ * Atomically lease the highest-priority pending candidates for this call. Concurrent calls
+ * (another tab, a re-upload, a double click) get disjoint sets, so no candidate is sent to
+ * the AI twice. A lease that outlives a crashed request expires and can be taken over.
+ */
+async function claimPendingCandidates({
+  db,
+  bookId,
+  userId,
+  limit,
+}: {
+  db: Context["db"];
+  bookId: string;
+  userId: string;
+  limit: number;
+}) {
+  const now = new Date();
+  const claimable = {
+    bookId,
+    userId,
+    status: "PENDING" as const,
+    OR: [{ leaseExpiresAt: null }, { leaseExpiresAt: { lt: now } }],
+  };
+  const available = await db.vocabularyCandidate.findMany({
+    where: claimable,
+    orderBy: [{ priorityScore: "desc" }, { createdAt: "asc" }],
+    take: limit,
+    select: { id: true },
+  });
+  if (available.length === 0) {
+    return { leaseToken: null, rows: [] };
+  }
+  const leaseToken = randomUUID();
+  // Re-checking the claimable filter in the UPDATE is what makes the claim exclusive.
+  await db.vocabularyCandidate.updateMany({
+    where: { ...claimable, id: { in: available.map((row) => row.id) } },
+    data: { leaseToken, leaseExpiresAt: new Date(now.getTime() + REFINE_LEASE_MS) },
+  });
+  const rows = await db.vocabularyCandidate.findMany({
+    where: { leaseToken },
+    orderBy: [{ priorityScore: "desc" }, { createdAt: "asc" }],
+  });
+  return { leaseToken, rows };
+}
+
+async function refineClaimedCandidates({
+  context,
+  book,
+  userId,
+  rows,
+  leaseToken,
+}: {
+  context: Context;
+  book: Awaited<ReturnType<typeof loadOwnedBook>>;
+  userId: string;
+  rows: Awaited<ReturnType<typeof claimPendingCandidates>>["rows"];
+  leaseToken: string;
+}) {
+  const candidates: Array<StoredCandidate> = rows.map((row) => ({
+    id: row.id,
+    surface: row.surface,
+    normalized: row.normalized,
+    kind: row.kind === "PHRASE" ? "phrase" : "word",
+    snippets: toStringArray(row.snippets),
+    localDifficulty: row.localDifficulty,
+    bookFrequency: row.bookFrequency,
+    firstChapterIndex: row.firstChapterIndex,
+    earliness: row.earliness,
+    usefulness: row.usefulness,
+    storyImportance: row.storyImportance,
+    frequencyWeight: row.frequencyWeight,
+    priorityScore: row.priorityScore,
+  }));
+
+  const existing = await context.db.vocabCard.findMany({
+    where: {
+      bookId: book.id,
+      userId,
+      headword: { in: candidates.map((candidate) => candidate.normalized) },
+    },
+    select: { headword: true },
+  });
+  const existingHeadwords = new Set(existing.map((card) => normalizeKey(card.headword)));
+  const toRefine = candidates.filter((candidate) => !existingHeadwords.has(candidate.normalized));
+
+  const refinement =
+    toRefine.length === 0
+      ? { refined: [], unresolvedIds: [], firstError: null }
+      : await refineInBatches({
+          refine: context.ai.refineVocabulary,
+          batchSize: AI_ITEMS_PER_CALL,
+          input: {
+            bookLanguage: book.bookLanguage,
+            nativeLanguage: book.nativeLanguage,
+            level: book.level,
+            items: toRefine.map((candidate) => ({
+              id: candidate.id,
+              surface: candidate.surface,
+              kind: candidate.kind,
+              snippets: candidate.snippets,
+              localDifficulty: candidate.localDifficulty,
+              localFrequency: candidate.bookFrequency,
+            })),
+          },
+        });
+
+  const isProviderWideFailure =
+    refinement.firstError != null && isProviderWideAiError(refinement.firstError);
+  if (refinement.firstError != null) {
+    const aiError = normalizeAiError(refinement.firstError);
+    const totalFailure = refinement.refined.length === 0 && isProviderWideFailure;
+    const details = {
+      bookId: book.id,
+      refined: refinement.refined.length,
+      unresolved: refinement.unresolvedIds.length,
+      providerStatus: aiError.providerStatus,
+      providerMessage: aiError.providerMessage,
+    };
+    if (totalFailure) {
+      console.error("Vocabulary refinement failed", details);
+      throw new ORPCError(aiError.code, { message: aiError.message });
+    }
+    console.warn("Vocabulary refinement partially failed", details);
+  }
+
+  const plan = planCandidateRefinement({
+    candidates,
+    refined: refinement.refined,
+    existingHeadwords,
+  });
+  const attemptsById = new Map(rows.map((row) => [row.id, row.refineAttempts]));
+  const unresolvedPlan = planUnresolvedCandidates({
+    unresolved: plan.unresolvedIds.map((id) => ({
+      id,
+      refineAttempts: attemptsById.get(id) ?? 0,
+    })),
+    isProviderWideFailure,
+  });
+  const attemptIncrement = unresolvedPlan.countsAsAttempt ? 1 : 0;
+  // Only rows this call still owns are written; an expired lease may have been taken over.
+  const owned = { bookId: book.id, userId, leaseToken };
+
+  const { pendingCount, created } = await context.db.$transaction(async (tx) => {
+    const resolvedIds = [...plan.refinedIds, ...plan.duplicateIds];
+    if (resolvedIds.length > 0) {
+      await tx.vocabularyCandidate.updateMany({
+        where: { ...owned, id: { in: resolvedIds } },
+        data: { status: "REFINED" },
+      });
+    }
+    if (plan.skippedIds.length > 0) {
+      await tx.vocabularyCandidate.updateMany({
+        where: { ...owned, id: { in: plan.skippedIds } },
+        data: { status: "SKIPPED" },
+      });
+    }
+    if (unresolvedPlan.exhaustedIds.length > 0) {
+      await tx.vocabularyCandidate.updateMany({
+        where: { ...owned, id: { in: unresolvedPlan.exhaustedIds } },
+        data: { status: "UNRESOLVED", refineAttempts: { increment: attemptIncrement } },
+      });
+    }
+    if (unresolvedPlan.retryIds.length > 0) {
+      const lowest = await tx.vocabularyCandidate.aggregate({
+        where: { bookId: book.id, userId, status: "PENDING" },
+        _min: { priorityScore: true },
+      });
+      await tx.vocabularyCandidate.updateMany({
+        where: { ...owned, id: { in: unresolvedPlan.retryIds } },
+        data: {
+          priorityScore: demotedPriority({ lowestPendingPriority: lowest._min.priorityScore }),
+          refineAttempts: { increment: attemptIncrement },
+        },
+      });
+    }
+    let createdCount = 0;
+    if (plan.cards.length > 0) {
+      const createdCards = await tx.vocabCard.createManyAndReturn({
+        data: plan.cards.map((card) => ({
+          bookId: book.id,
+          userId,
+          headword: card.headword,
+          displayForm: card.displayForm,
+          lemma: card.lemma,
+          isPhrase: card.isPhrase,
+          phraseType: card.phraseType,
+          partOfSpeech: card.partOfSpeech,
+          translation: card.translation,
+          explanation: card.explanation,
+          examples: card.examples,
+          difficulty: card.difficulty,
+          usefulness: card.usefulness,
+          bookFrequency: card.bookFrequency,
+          firstChapterIndex: card.firstChapterIndex,
+          priorityScore: card.priorityScore,
+          aiModel: context.ai.isConfigured ? context.ai.model : null,
+        })),
+        skipDuplicates: true,
+        select: { id: true },
+      });
+      createdCount = createdCards.length;
+      if (createdCards.length > 0) {
+        await tx.reviewState.createMany({
+          data: createdCards.map((card) => ({ cardId: card.id, userId })),
+          skipDuplicates: true,
+        });
+      }
+    }
+    const remaining = await tx.vocabularyCandidate.count({
+      where: { bookId: book.id, userId, status: "PENDING" },
+    });
+    return { pendingCount: remaining, created: createdCount };
+  });
+
+  return {
+    processed: candidates.length,
+    // Cards actually inserted: a concurrent writer may already have created some headwords.
+    created,
+    skipped: plan.skippedIds.length,
+    unresolved: plan.unresolvedIds.length,
+    pendingCount,
+  };
 }
 
 export const analysisRouter = {
@@ -205,166 +435,53 @@ export const analysisRouter = {
       const userId = context.session.user.id;
       const book = await loadOwnedBook({ db: context.db, userId, bookId: input.bookId });
 
-      const rows = await context.db.vocabularyCandidate.findMany({
-        where: { bookId: book.id, userId, status: "PENDING" },
-        orderBy: [{ priorityScore: "desc" }, { createdAt: "asc" }],
-        take: input.limit,
+      const { leaseToken, rows } = await claimPendingCandidates({
+        db: context.db,
+        bookId: book.id,
+        userId,
+        limit: input.limit,
       });
-      const candidates: Array<StoredCandidate> = rows.map((row) => ({
-        id: row.id,
-        surface: row.surface,
-        normalized: row.normalized,
-        kind: row.kind === "PHRASE" ? "phrase" : "word",
-        snippets: toStringArray(row.snippets),
-        localDifficulty: row.localDifficulty,
-        bookFrequency: row.bookFrequency,
-        firstChapterIndex: row.firstChapterIndex,
-        earliness: row.earliness,
-        usefulness: row.usefulness,
-        storyImportance: row.storyImportance,
-        frequencyWeight: row.frequencyWeight,
-        priorityScore: row.priorityScore,
-      }));
-
-      if (candidates.length === 0) {
-        return { processed: 0, created: 0, skipped: 0, unresolved: 0, pendingCount: 0 };
-      }
-
-      const existing = await context.db.vocabCard.findMany({
-        where: {
-          bookId: book.id,
-          userId,
-          headword: { in: candidates.map((candidate) => candidate.normalized) },
-        },
-        select: { headword: true },
-      });
-      const existingHeadwords = new Set(existing.map((card) => normalizeKey(card.headword)));
-      const toRefine = candidates.filter(
-        (candidate) => !existingHeadwords.has(candidate.normalized),
-      );
-
-      const refinement =
-        toRefine.length === 0
-          ? { refined: [], unresolvedIds: [], firstError: null }
-          : await refineInBatches({
-              refine: context.ai.refineVocabulary,
-              batchSize: AI_ITEMS_PER_CALL,
-              input: {
-                bookLanguage: book.bookLanguage,
-                nativeLanguage: book.nativeLanguage,
-                level: book.level,
-                items: toRefine.map((candidate) => ({
-                  id: candidate.id,
-                  surface: candidate.surface,
-                  kind: candidate.kind,
-                  snippets: candidate.snippets,
-                  localDifficulty: candidate.localDifficulty,
-                  localFrequency: candidate.bookFrequency,
-                })),
-              },
-            });
-
-      if (refinement.firstError != null) {
-        const aiError = normalizeAiError(refinement.firstError);
-        const totalFailure =
-          refinement.refined.length === 0 && isProviderWideAiError(refinement.firstError);
-        const details = {
-          bookId: book.id,
-          refined: refinement.refined.length,
-          unresolved: refinement.unresolvedIds.length,
-          providerStatus: aiError.providerStatus,
-          providerMessage: aiError.providerMessage,
-        };
-        if (totalFailure) {
-          console.error("Vocabulary refinement failed", details);
-          throw new ORPCError(aiError.code, { message: aiError.message });
-        }
-        console.warn("Vocabulary refinement partially failed", details);
-      }
-
-      const plan = planCandidateRefinement({
-        candidates,
-        refined: refinement.refined,
-        existingHeadwords,
-      });
-
-      const pendingCount = await context.db.$transaction(async (tx) => {
-        const resolvedIds = [...plan.refinedIds, ...plan.duplicateIds];
-        if (resolvedIds.length > 0) {
-          await tx.vocabularyCandidate.updateMany({
-            where: { id: { in: resolvedIds }, bookId: book.id, userId },
-            data: { status: "REFINED" },
-          });
-        }
-        if (plan.skippedIds.length > 0) {
-          await tx.vocabularyCandidate.updateMany({
-            where: { id: { in: plan.skippedIds }, bookId: book.id, userId },
-            data: { status: "SKIPPED" },
-          });
-        }
-        if (plan.unresolvedIds.length > 0) {
-          await tx.vocabularyCandidate.updateMany({
-            where: { id: { in: plan.unresolvedIds }, bookId: book.id, userId },
-            data: { priorityScore: demotedPriority({ candidates }) },
-          });
-        }
-        if (plan.cards.length > 0) {
-          const createdCards = await tx.vocabCard.createManyAndReturn({
-            data: plan.cards.map((card) => ({
-              bookId: book.id,
-              userId,
-              headword: card.headword,
-              displayForm: card.displayForm,
-              lemma: card.lemma,
-              isPhrase: card.isPhrase,
-              phraseType: card.phraseType,
-              partOfSpeech: card.partOfSpeech,
-              translation: card.translation,
-              explanation: card.explanation,
-              examples: card.examples,
-              difficulty: card.difficulty,
-              usefulness: card.usefulness,
-              bookFrequency: card.bookFrequency,
-              firstChapterIndex: card.firstChapterIndex,
-              priorityScore: card.priorityScore,
-              aiModel: context.ai.isConfigured ? context.ai.model : null,
-            })),
-            skipDuplicates: true,
-            select: { id: true },
-          });
-          if (createdCards.length > 0) {
-            await tx.reviewState.createMany({
-              data: createdCards.map((card) => ({ cardId: card.id, userId })),
-              skipDuplicates: true,
-            });
-          }
-        }
-        return await tx.vocabularyCandidate.count({
+      if (leaseToken == null || rows.length === 0) {
+        // Nothing left, or every pending candidate is leased by another run right now.
+        const pendingCount = await context.db.vocabularyCandidate.count({
           where: { bookId: book.id, userId, status: "PENDING" },
         });
-      });
-
-      return {
-        processed: candidates.length,
-        created: plan.cards.length,
-        skipped: plan.skippedIds.length,
-        unresolved: plan.unresolvedIds.length,
-        pendingCount,
-      };
+        return { processed: 0, created: 0, skipped: 0, unresolved: 0, pendingCount };
+      }
+      try {
+        return await refineClaimedCandidates({ context, book, userId, rows, leaseToken });
+      } finally {
+        await context.db.vocabularyCandidate.updateMany({
+          where: { leaseToken },
+          data: { leaseToken: null, leaseExpiresAt: null },
+        });
+      }
     }),
 
-  /** Mark preparation complete. Only READY books are presented as fully prepared. */
+  /**
+   * Mark preparation complete. The server decides: a book is READY only once it has cards or
+   * nothing is left to refine, so a stale or early client call cannot skip the resumable state.
+   */
   finalize: protectedProcedure
     .input(z.object({ bookId: z.string().min(1) }))
     .handler(async ({ input, context }) => {
-      const result = await context.db.book.updateMany({
-        where: { id: input.bookId, userId: context.session.user.id },
-        data: { analysisStatus: "READY" },
+      const userId = context.session.user.id;
+      const book = await loadOwnedBook({ db: context.db, userId, bookId: input.bookId });
+      const [cardCount, pendingCount] = await Promise.all([
+        context.db.vocabCard.count({ where: { bookId: book.id, userId } }),
+        context.db.vocabularyCandidate.count({
+          where: { bookId: book.id, userId, status: "PENDING" },
+        }),
+      ]);
+      const analysisStatus = nextAnalysisStatus({
+        current: book.analysisStatus,
+        cardCount,
+        pendingCount,
       });
-      if (result.count === 0) {
-        throw new ORPCError("NOT_FOUND", { message: "Book not found" });
+      if (analysisStatus !== book.analysisStatus) {
+        await context.db.book.update({ where: { id: book.id }, data: { analysisStatus } });
       }
-      return { success: true };
+      return { success: true, analysisStatus };
     }),
 
   /** Whether the AI layer is configured; the UI adapts its copy when it is not. */

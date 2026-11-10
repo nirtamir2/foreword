@@ -41,6 +41,11 @@ export function useBookPreparation({ book }: { book: BookDetail | undefined }) {
   const [hasSavedFile, setHasSavedFile] = useState(false);
   const [needsUpload, setNeedsUpload] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  /**
+   * Set synchronously when a run starts (including loading the saved file from IndexedDB) and
+   * cleared when it settles. Render state lags a click, so it cannot be the re-entrancy guard.
+   */
+  const isRunningRef = useRef(false);
   const contentHash = book?.contentHash ?? null;
 
   useEffect(() => {
@@ -73,15 +78,20 @@ export function useBookPreparation({ book }: { book: BookDetail | undefined }) {
     ]);
   }
 
-  async function run(work: (signal: AbortSignal) => Promise<Outcome>) {
-    if (book == null || progress != null) {
+  /** `work` resolves null when it stopped before preparing anything (nothing to announce). */
+  async function run(work: (signal: AbortSignal) => Promise<Outcome | null>) {
+    if (book == null || isRunningRef.current) {
       return;
     }
+    isRunningRef.current = true;
     const controller = new AbortController();
     abortRef.current = controller;
     setProgress(progressFor({ stage: "ranking", ratio: 0 }));
     try {
       const outcome = await work(controller.signal);
+      if (outcome == null) {
+        return;
+      }
       if (book.analysisStatus !== "READY" && (outcome.created > 0 || outcome.pendingCount === 0)) {
         await client.analysis.finalize({ bookId: book.id });
       }
@@ -94,6 +104,7 @@ export function useBookPreparation({ book }: { book: BookDetail | undefined }) {
       }
       await refreshBookData();
     } finally {
+      isRunningRef.current = false;
       abortRef.current = null;
       setProgress(null);
     }
@@ -119,63 +130,69 @@ export function useBookPreparation({ book }: { book: BookDetail | undefined }) {
     });
   }
 
-  /** Re-analyze from a file (saved or re-uploaded), then refine the next set. */
-  function analyzeFromFile(file: File) {
-    void run(async (signal) => {
-      if (book == null) {
-        return { created: 0, pendingCount: 0 };
-      }
-      setProgress(progressFor({ stage: "reading", ratio: 0 }));
-      const parsed = await parseBook({
-        file,
-        onProgress: (parseProgress) => {
-          setProgress(
-            progressFor({
-              stage: parseProgress.stage === "detecting" ? "detecting" : "reading",
-              ratio: parseProgress.ratio ?? 0.5,
-            }),
-          );
-        },
-      });
-      if (parsed.contentHash !== book.contentHash) {
-        throw new Error(m.error_wrong_file());
-      }
-      const saved = await saveBookFile({ contentHash: parsed.contentHash, file });
-      setHasSavedFile(saved);
-      const ranked = await rankAndSaveCandidates({
-        book: parsed,
-        context: {
-          bookId: book.id,
-          language: book.bookLanguage,
-          level: book.level,
-          positionType: book.positionType,
-          positionValue: book.positionValue,
-          onProgress: setProgress,
-          signal,
-        },
-      });
-      return await refinePendingCandidates({
+  async function analyze({ file, signal }: { file: File; signal: AbortSignal }): Promise<Outcome> {
+    if (book == null) {
+      return { created: 0, pendingCount: 0 };
+    }
+    setProgress(progressFor({ stage: "reading", ratio: 0 }));
+    const parsed = await parseBook({
+      file,
+      onProgress: (parseProgress) => {
+        setProgress(
+          progressFor({
+            stage: parseProgress.stage === "detecting" ? "detecting" : "reading",
+            ratio: parseProgress.ratio ?? 0.5,
+          }),
+        );
+      },
+    });
+    if (parsed.contentHash !== book.contentHash) {
+      throw new Error(m.error_wrong_file());
+    }
+    const saved = await saveBookFile({ contentHash: parsed.contentHash, file });
+    setHasSavedFile(saved);
+    const ranked = await rankAndSaveCandidates({
+      book: parsed,
+      context: {
         bookId: book.id,
+        language: book.bookLanguage,
+        level: book.level,
+        positionType: book.positionType,
+        positionValue: book.positionValue,
         onProgress: setProgress,
         signal,
-        targetCards: ADD_MORE_TARGET,
-        initialPending: ranked.pendingCount,
-      });
+      },
+    });
+    return await refinePendingCandidates({
+      bookId: book.id,
+      onProgress: setProgress,
+      signal,
+      targetCards: ADD_MORE_TARGET,
+      initialPending: ranked.pendingCount,
     });
   }
 
+  /** Re-analyze from a file (saved or re-uploaded), then refine the next set. */
+  function analyzeFromFile(file: File) {
+    void run(async (signal) => await analyze({ file, signal }));
+  }
+
+  /** Load the saved file inside the same run, so the IndexedDB read is guarded too. */
   async function continueWithSavedFile() {
-    if (book == null) {
-      return;
-    }
-    const file = await loadBookFile({ contentHash: book.contentHash });
-    if (file == null) {
-      setHasSavedFile(false);
-      setNeedsUpload(true);
-      toast(m.prep_saved_file_missing());
-      return;
-    }
-    analyzeFromFile(file);
+    await run(async (signal) => {
+      if (book == null) {
+        return null;
+      }
+      setProgress(progressFor({ stage: "reading", ratio: 0 }));
+      const file = await loadBookFile({ contentHash: book.contentHash });
+      if (file == null) {
+        setHasSavedFile(false);
+        setNeedsUpload(true);
+        toast(m.prep_saved_file_missing());
+        return null;
+      }
+      return await analyze({ file, signal });
+    });
   }
 
   /** The "Add more words" entry point: backlog first, then saved file, then ask for the file. */

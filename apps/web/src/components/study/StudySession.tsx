@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { BookOpen, Clapperboard, GraduationCap } from "lucide-react";
@@ -16,21 +16,16 @@ import { Flashcard } from "./Flashcard";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
 import { RecallQuestion } from "./RecallQuestion";
 import { SessionSummary } from "./SessionSummary";
-import type { SessionStats } from "./SessionSummary";
 import { StudyModeTabs } from "./StudyModeTabs";
 import type { StudyMode } from "./StudyModeTabs";
+import { INITIAL_STUDY_ROUND, sessionStatsFor, studyRoundReducer } from "./studyRoundReducer";
+import type { AnswerResult } from "./studyRoundReducer";
 
-type AnswerResult = "KNOWN" | "STILL_LEARNING" | "CORRECT" | "INCORRECT";
 type Scope = "TO_LEARN" | "KNOWN";
 
 export const STUDY_SESSION_SIZE = 15;
-const EMPTY_STATS: SessionStats = {
-  answered: 0,
-  known: 0,
-  correct: 0,
-  incorrect: 0,
-  stillLearning: 0,
-};
+/** Retries are safe: every answer carries a clientAnswerId the server de-duplicates. */
+const ANSWER_SAVE_RETRIES = 2;
 
 function shuffle<T>(items: ReadonlyArray<T>): Array<T> {
   const copy = [...items];
@@ -70,16 +65,6 @@ function buildOptions({
   return shuffle([card.translation, ...distractors]);
 }
 
-function applyResult(stats: SessionStats, result: AnswerResult): SessionStats {
-  return {
-    answered: stats.answered + 1,
-    known: stats.known + (result === "KNOWN" ? 1 : 0),
-    correct: stats.correct + (result === "CORRECT" ? 1 : 0),
-    incorrect: stats.incorrect + (result === "INCORRECT" ? 1 : 0),
-    stillLearning: stats.stillLearning + (result === "STILL_LEARNING" ? 1 : 0),
-  };
-}
-
 interface Props {
   bookId: string;
   scope: Scope;
@@ -88,10 +73,11 @@ interface Props {
 export function StudySession({ bookId, scope }: Props) {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<StudyMode>("FLASHCARD");
-  const [index, setIndex] = useState(0);
-  const [stats, setStats] = useState<SessionStats>(EMPTY_STATS);
+  const [roundState, dispatch] = useReducer(studyRoundReducer, INITIAL_STUDY_ROUND);
+  const { index, round } = roundState;
   const [videoCard, setVideoCard] = useState<StudyCard | null>(null);
-  const [round, setRound] = useState(0);
+  /** Answer saves still in flight; the next round waits for them before fetching a deck. */
+  const pendingSavesRef = useRef(new Set<Promise<void>>());
 
   const sessionQuery = useQuery({
     ...orpc.study.session.queryOptions({ input: { bookId, limit: STUDY_SESSION_SIZE, scope } }),
@@ -103,6 +89,9 @@ export function StudySession({ bookId, scope }: Props) {
 
   const recordAnswer = useMutation({
     ...orpc.study.recordAnswer.mutationOptions(),
+    retry: ANSWER_SAVE_RETRIES,
+    // Fail instead of pausing while offline, so a lost answer is reported and not counted.
+    networkMode: "always",
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : m.error_saving_answer());
     },
@@ -112,24 +101,32 @@ export function StudySession({ bookId, scope }: Props) {
   const deck = session?.cards ?? [];
   const current = deck.at(index);
   const isComplete = session != null && deck.length > 0 && current == null;
+  const stats = sessionStatsFor(roundState.answers);
 
   function answer(result: AnswerResult) {
-    if (current == null) {
+    if (current == null || roundState.phase !== "answering") {
       return;
     }
     const isLastCard = index + 1 >= deck.length;
-    recordAnswer.mutate(
-      { cardId: current.id, mode, result },
-      {
-        onSettled: () => {
-          if (isLastCard) {
-            void invalidateBookData();
-          }
+    const clientAnswerId = crypto.randomUUID();
+    dispatch({ type: "answered", id: clientAnswerId, result });
+    const save = recordAnswer
+      .mutateAsync({ cardId: current.id, mode, result, clientAnswerId })
+      .then(
+        () => {
+          dispatch({ type: "answerSaved", id: clientAnswerId });
         },
-      },
-    );
-    setStats((previous) => applyResult(previous, result));
-    setIndex((previous) => previous + 1);
+        () => {
+          dispatch({ type: "answerFailed", id: clientAnswerId });
+        },
+      )
+      .finally(() => {
+        pendingSavesRef.current.delete(save);
+        if (isLastCard) {
+          void invalidateBookData();
+        }
+      });
+    pendingSavesRef.current.add(save);
   }
 
   async function invalidateBookData() {
@@ -142,11 +139,14 @@ export function StudySession({ bookId, scope }: Props) {
   }
 
   async function startNextRound() {
-    setIndex(0);
-    setStats(EMPTY_STATS);
-    setRound((previous) => previous + 1);
-    await invalidateBookData();
-    await queryClient.invalidateQueries({ queryKey: orpc.study.session.key() });
+    if (roundState.phase !== "answering") {
+      return;
+    }
+    dispatch({ type: "nextRoundRequested" });
+    // A deck fetched before the last answers land would repeat cards just marked known.
+    await Promise.allSettled(pendingSavesRef.current);
+    await Promise.all([invalidateBookData(), sessionQuery.refetch()]);
+    dispatch({ type: "nextRoundLoaded" });
   }
 
   function renderQuestion(): ReactNode {
@@ -192,7 +192,7 @@ export function StudySession({ bookId, scope }: Props) {
     }
   }
 
-  if (sessionQuery.isLoading) {
+  if (sessionQuery.isLoading || roundState.phase === "loading-next-round") {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
         <Skeleton style={{ height: "2.5rem", width: "20rem" }} />

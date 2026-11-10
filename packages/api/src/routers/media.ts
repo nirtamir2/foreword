@@ -1,25 +1,76 @@
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
-import type { VideoStatus } from "@app-template/db";
+import type { Context } from "../context";
 import { protectedProcedure } from "../index";
-import type { VideoJobStatus } from "../media/videoService";
+import { canStartVideoJob, nextVideoPollState, videoPhase } from "../media/videoJobState";
 import { toExamples } from "../vocabulary/examples";
 
-function toDbStatus(status: VideoJobStatus): VideoStatus {
-  switch (status) {
-    case "pending": {
-      return "QUEUED";
+type Db = Context["db"];
+
+interface ClaimedVideo {
+  id: string;
+  updatedAt: Date;
+}
+
+/**
+ * Take ownership of a card's video record before paying for a submission. The insert relies
+ * on the unique cardId and the update on an unchanged updatedAt, so of two concurrent requests
+ * only one claims the record; the other returns the winner's state.
+ */
+async function claimVideoRecord({
+  db,
+  cardId,
+  userId,
+  model,
+  existing,
+}: {
+  db: Db;
+  cardId: string;
+  userId: string;
+  model: string;
+  existing: { id: string; updatedAt: Date; prompt: string } | null;
+}): Promise<ClaimedVideo | null> {
+  if (existing == null) {
+    const inserted = await db.vocabCardVideo.createMany({
+      data: [{ cardId, userId, status: "QUEUED", jobId: null, model, prompt: "" }],
+      skipDuplicates: true,
+    });
+    if (inserted.count === 0) {
+      return null;
     }
-    case "processing": {
-      return "IN_PROGRESS";
-    }
-    case "completed": {
-      return "COMPLETED";
-    }
-    case "failed": {
-      return "FAILED";
-    }
+    return await db.vocabCardVideo.findUnique({
+      where: { cardId },
+      select: { id: true, updatedAt: true },
+    });
   }
+  const claimedAt = new Date();
+  const updated = await db.vocabCardVideo.updateMany({
+    where: { id: existing.id, updatedAt: existing.updatedAt },
+    data: {
+      status: "QUEUED",
+      jobId: null,
+      model,
+      videoUrl: null,
+      error: null,
+      pollErrorCount: 0,
+      updatedAt: claimedAt,
+    },
+  });
+  return updated.count === 0 ? null : { id: existing.id, updatedAt: claimedAt };
+}
+
+function toResponse(record: {
+  status: "QUEUED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  videoUrl: string | null;
+  prompt: string;
+  error: string | null;
+}) {
+  return {
+    status: record.status,
+    videoUrl: record.videoUrl,
+    prompt: record.prompt.length > 0 ? record.prompt : null,
+    error: record.error,
+  };
 }
 
 export const mediaRouter = {
@@ -41,15 +92,27 @@ export const mediaRouter = {
         throw new ORPCError("NOT_FOUND", { message: "Card not found" });
       }
       const existing = card.video;
-      if (
-        existing != null &&
-        !input.regenerate &&
-        (existing.status === "COMPLETED" ||
-          existing.status === "QUEUED" ||
-          existing.status === "IN_PROGRESS")
-      ) {
-        return { status: existing.status, videoUrl: existing.videoUrl, prompt: existing.prompt };
+      const phase = videoPhase({ record: existing, now: new Date() });
+      if (existing != null && !canStartVideoJob({ phase, regenerate: input.regenerate })) {
+        return toResponse(existing);
       }
+
+      const claimed = await claimVideoRecord({
+        db: context.db,
+        cardId: card.id,
+        userId,
+        model: context.video.model,
+        existing,
+      });
+      if (claimed == null) {
+        // Another request claimed the record first; report its state instead of paying twice.
+        const current = await context.db.vocabCardVideo.findUniqueOrThrow({
+          where: { cardId: card.id },
+        });
+        return toResponse(current);
+      }
+      // Writes after the provider call only land if nobody re-claimed the record meanwhile.
+      const stillOwned = { id: claimed.id, updatedAt: claimed.updatedAt, jobId: null };
 
       const prompt = await context.video.buildPrompt({
         displayForm: card.displayForm,
@@ -64,49 +127,26 @@ export const mediaRouter = {
         failure: error instanceof Error ? error.message : "Video generation failed",
       }));
       if ("failure" in submission) {
-        await context.db.vocabCardVideo.upsert({
-          where: { cardId: card.id },
-          create: {
-            cardId: card.id,
-            userId,
-            status: "FAILED",
-            model: context.video.model,
-            prompt,
-            error: submission.failure,
-          },
-          update: {
-            status: "FAILED",
-            model: context.video.model,
-            prompt,
-            error: submission.failure,
-            videoUrl: null,
-            jobId: null,
-          },
+        await context.db.vocabCardVideo.updateMany({
+          where: stillOwned,
+          data: { status: "FAILED", prompt, error: submission.failure },
         });
         throw new ORPCError("BAD_GATEWAY", { message: submission.failure });
       }
-      const { jobId } = submission;
 
-      const record = await context.db.vocabCardVideo.upsert({
-        where: { cardId: card.id },
-        create: {
-          cardId: card.id,
-          userId,
-          status: "QUEUED",
-          jobId,
-          model: context.video.model,
-          prompt,
-        },
-        update: {
-          status: "QUEUED",
-          jobId,
-          model: context.video.model,
-          prompt,
-          error: null,
-          videoUrl: null,
-        },
+      const recorded = await context.db.vocabCardVideo.updateMany({
+        where: stillOwned,
+        data: { status: "QUEUED", jobId: submission.jobId, prompt },
       });
-      return { status: record.status, videoUrl: record.videoUrl, prompt: record.prompt };
+      if (recorded.count === 0) {
+        console.warn("Video claim was taken over before the job id was stored", {
+          cardId: card.id,
+        });
+      }
+      const current = await context.db.vocabCardVideo.findUniqueOrThrow({
+        where: { cardId: card.id },
+      });
+      return toResponse(current);
     }),
 
   /** Poll the clip status. Syncs the provider state into the database. */
@@ -120,47 +160,46 @@ export const mediaRouter = {
       if (record == null) {
         return { status: null, videoUrl: null, prompt: null, error: null, progress: null };
       }
-      const isActive = record.status === "QUEUED" || record.status === "IN_PROGRESS";
-      if (!isActive || record.jobId == null || !context.video.isConfigured) {
-        return {
-          status: record.status,
-          videoUrl: record.videoUrl,
-          prompt: record.prompt,
-          error: record.error,
-          progress: null,
-        };
-      }
-      try {
-        const snapshot = await context.video.status({ jobId: record.jobId });
-        const status = toDbStatus(snapshot.status);
-        const updated = await context.db.vocabCardVideo.update({
-          where: { id: record.id },
-          data: {
-            status,
-            videoUrl: snapshot.url ?? record.videoUrl,
-            error: snapshot.error,
-          },
+      const phase = videoPhase({ record, now: new Date() });
+
+      if (phase === "abandoned") {
+        await context.db.vocabCardVideo.updateMany({
+          where: { id: record.id, updatedAt: record.updatedAt, jobId: null },
+          data: { status: "FAILED", error: "The video request was interrupted. Try again." },
         });
-        return {
-          status: updated.status,
-          videoUrl: updated.videoUrl,
-          prompt: updated.prompt,
-          error: updated.error,
-          progress: snapshot.progress,
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Could not read video status";
-        const failed = await context.db.vocabCardVideo.update({
+        const current = await context.db.vocabCardVideo.findUniqueOrThrow({
           where: { id: record.id },
-          data: { status: "FAILED", error: message },
         });
-        return {
-          status: failed.status,
-          videoUrl: failed.videoUrl,
-          prompt: failed.prompt,
-          error: failed.error,
-          progress: null,
-        };
+        return { ...toResponse(current), progress: null };
       }
+      if (phase !== "running" || record.jobId == null || !context.video.isConfigured) {
+        return { ...toResponse(record), progress: null };
+      }
+
+      const { jobId } = record;
+      const result = await context.video
+        .status({ jobId })
+        .then((snapshot) => ({ ok: true as const, snapshot }))
+        .catch((error: unknown) => ({
+          ok: false as const,
+          message: error instanceof Error ? error.message : "Could not read video status",
+        }));
+      const next = nextVideoPollState({ current: record, result });
+      // Keyed on the job id this poll read, so a poll that resolves after a regenerate
+      // cannot write the old job's state over the new one.
+      const written = await context.db.vocabCardVideo.updateMany({
+        where: { id: record.id, jobId },
+        data: next,
+      });
+      if (written.count === 0) {
+        const current = await context.db.vocabCardVideo.findUniqueOrThrow({
+          where: { id: record.id },
+        });
+        return { ...toResponse(current), progress: null };
+      }
+      return {
+        ...toResponse({ ...record, ...next }),
+        progress: result.ok ? result.snapshot.progress : null,
+      };
     }),
 };

@@ -59,6 +59,8 @@ enum CandidateStatus {
   REFINED
   SKIPPED
   DELETED
+  /// The AI gave no answer for this candidate MAX_REFINE_ATTEMPTS times; never retried.
+  UNRESOLVED
 }
 
 enum VideoStatus {
@@ -116,6 +118,11 @@ model VocabularyCandidate {
   frequencyWeight   Float
   priorityScore     Float
   status            CandidateStatus @default(PENDING)
+  /// How many refinement runs returned no answer for this candidate.
+  refineAttempts    Int             @default(0)
+  /// Refinement lease: set while one refineNext call owns this candidate.
+  leaseToken        String?
+  leaseExpiresAt    DateTime?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -189,6 +196,8 @@ model StudyReview {
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   mode      StudyMode
   result    ReviewResult
+  /// Client-generated id that makes retried answer submissions idempotent.
+  clientAnswerId String? @unique
   createdAt DateTime     @default(now())
 
   @@index([userId, createdAt])
@@ -209,6 +218,8 @@ model VocabCardVideo {
   prompt    String
   videoUrl  String?
   error     String?
+  /// Consecutive status polls that failed to reach the provider.
+  pollErrorCount Int    @default(0)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 

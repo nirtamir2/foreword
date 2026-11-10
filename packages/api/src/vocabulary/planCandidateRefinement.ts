@@ -112,14 +112,11 @@ export function planCandidateRefinement({
   return plan;
 }
 
-/** Push unanswered candidates below everything else so the next run tries fresh ones first. */
+/** Push unanswered candidates below every other pending candidate so fresh ones are tried first. */
 export function demotedPriority({
-  candidates,
+  lowestPendingPriority,
 }: {
-  candidates: ReadonlyArray<StoredCandidate>;
+  lowestPendingPriority: number | null;
 }): number {
-  if (candidates.length === 0) {
-    return 0;
-  }
-  return Math.min(...candidates.map((candidate) => candidate.priorityScore)) - 1;
+  return (lowestPendingPriority ?? 0) - 1;
 }
