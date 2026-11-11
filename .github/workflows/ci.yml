@@ -1,0 +1,39 @@
+name: Lint and build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RAYON_NUM_THREADS: "2"
+      GOMAXPROCS: "2"
+      DATABASE_URL: postgresql://offline:offline@127.0.0.1:1/offline
+      BETTER_AUTH_SECRET: offline-validation-placeholder-0000000000
+      BETTER_AUTH_URL: http://localhost:3001
+      CORS_ORIGIN: http://localhost:3001
+      GOOGLE_CLIENT_ID: offline-placeholder
+      GOOGLE_CLIENT_SECRET: offline-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm db:generate
+      - run: pnpm run ci
+      - run: pnpm test --run --maxWorkers=2
+      - run: pnpm build

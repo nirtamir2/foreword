@@ -21,7 +21,7 @@
     "lint:fix": "pnpm --filter web paraglide:compile && pnpm lint:oxlint --fix && pnpm lint:eslint --fix",
     "test": "vitest --passWithNoTests",
     "type-check": "pnpm -r type-check",
-    "lint:oxlint": "oxlint --type-aware",
+    "lint:oxlint": "oxlint --threads=2 --type-aware",
     "lint:eslint": "eslint ."
   },
   "dependencies": {
