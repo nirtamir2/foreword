@@ -34,6 +34,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm db:generate
-      - run: pnpm run ci
+      - run: pnpm lint
+      - run: pnpm exec oxfmt --check .
+        if: ${{ !cancelled() }}
+      - run: pnpm type-check
+        if: ${{ !cancelled() }}
       - run: pnpm test --run --maxWorkers=2
+        if: ${{ !cancelled() }}
       - run: pnpm build
+        if: ${{ !cancelled() }}

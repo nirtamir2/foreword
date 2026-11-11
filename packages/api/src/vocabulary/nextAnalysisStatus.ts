@@ -13,7 +13,7 @@ export function nextAnalysisStatus({
   cardCount: number;
   pendingCount: number;
 }): AnalysisStatus {
-  if (current === "READY" || cardCount > 0 || pendingCount === 0) {
+  if (current === "READY" || pendingCount === 0 || cardCount > 0) {
     return "READY";
   }
   return current;

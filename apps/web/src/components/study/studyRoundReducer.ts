@@ -85,18 +85,22 @@ export function sessionStatsFor(answers: ReadonlyArray<AnswerRecord>): SessionSt
     switch (answer.result) {
       case "KNOWN": {
         stats.known += 1;
+        // oxlint-disable-next-line eslint-unicorn/no-break-in-nested-loop -- exits only the switch; retain one result count per answer
         break;
       }
       case "CORRECT": {
         stats.correct += 1;
+        // oxlint-disable-next-line eslint-unicorn/no-break-in-nested-loop -- exits only the switch; retain one result count per answer
         break;
       }
       case "INCORRECT": {
         stats.incorrect += 1;
+        // oxlint-disable-next-line eslint-unicorn/no-break-in-nested-loop -- exits only the switch; retain one result count per answer
         break;
       }
       case "STILL_LEARNING": {
         stats.stillLearning += 1;
+        // oxlint-disable-next-line eslint-unicorn/no-break-in-nested-loop -- exits only the switch; retain one result count per answer
         break;
       }
     }

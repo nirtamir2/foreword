@@ -114,6 +114,7 @@ export function StudySession({ bookId, scope }: Props) {
     dispatch({ type: "answered", id: clientAnswerId, result });
     const save = recordAnswer
       .mutateAsync({ cardId: current.id, mode, result, clientAnswerId })
+      // oxlint-disable-next-line eslint-unicorn/prefer-then-catch -- retain rejection handling for the save only; catching success-handler errors changes answer state
       .then(
         () => {
           dispatch({ type: "answerSaved", id: clientAnswerId });

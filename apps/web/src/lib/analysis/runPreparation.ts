@@ -166,11 +166,12 @@ export async function refinePendingCandidates({
     outcome.unresolved += result.unresolved;
     outcome.pendingCount = result.pendingCount;
 
-    if (result.pendingCount === 0 || outcome.created >= targetCards) {
-      break;
-    }
-    if (result.processed === 0) {
+    if (
+      result.pendingCount === 0 ||
+      outcome.created >= targetCards ||
       // Every remaining candidate is leased by another run (another tab or upload).
+      result.processed === 0
+    ) {
       break;
     }
     if (result.processed > 0 && result.created === 0 && result.unresolved >= result.processed) {

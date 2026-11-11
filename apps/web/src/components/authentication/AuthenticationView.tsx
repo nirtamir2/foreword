@@ -138,9 +138,9 @@ function SocialProviderButton({
         setIsRedirecting(false);
       }
     }
-    globalThis.addEventListener("pageshow", handlePageShow);
+    addEventListener("pageshow", handlePageShow);
     return () => {
-      globalThis.removeEventListener("pageshow", handlePageShow);
+      removeEventListener("pageshow", handlePageShow);
     };
   }, []);
 
