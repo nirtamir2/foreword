@@ -1,4 +1,6 @@
 const names = new Set([
+  // pg-protocol names PostgreSQL ErrorResponse objects with lowercase "error".
+  "error",
   "Error",
   "TypeError",
   "RangeError",

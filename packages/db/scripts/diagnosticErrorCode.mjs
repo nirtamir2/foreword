@@ -8,6 +8,7 @@ const codes = new Set([
   "08003",
   "08004",
   "08006",
+  "08007",
   "08P01",
   "57P01",
   "57P02",
@@ -41,6 +42,12 @@ const codes = new Set([
   "ERR_DLOPEN_FAILED",
   "ERR_INVALID_URL",
   "ERR_INVALID_ARG_TYPE",
+  "42704",
+  "22023",
+  "0A000",
+  "55P02",
+  "F0000",
+  "XX000",
   "READ_ONLY_DISABLED",
 ]);
 
