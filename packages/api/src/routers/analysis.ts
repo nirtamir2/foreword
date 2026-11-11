@@ -131,8 +131,9 @@ async function claimPendingCandidates({
     where: { ...claimable, id: { in: available.map((row) => row.id) } },
     data: { leaseToken, leaseExpiresAt: new Date(now.getTime() + REFINE_LEASE_MS) },
   });
+  // Scoped to the book so the lookup uses the bookId index (leaseToken is not indexed).
   const rows = await db.vocabularyCandidate.findMany({
-    where: { leaseToken },
+    where: { bookId, userId, leaseToken },
     orderBy: [{ priorityScore: "desc" }, { createdAt: "asc" }],
   });
   return { leaseToken, rows };
@@ -452,7 +453,7 @@ export const analysisRouter = {
         return await refineClaimedCandidates({ context, book, userId, rows, leaseToken });
       } finally {
         await context.db.vocabularyCandidate.updateMany({
-          where: { leaseToken },
+          where: { bookId: book.id, userId, leaseToken },
           data: { leaseToken: null, leaseExpiresAt: null },
         });
       }
