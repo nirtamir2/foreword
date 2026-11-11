@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter web build && rm -rf .vercel/output && mkdir -p .vercel && mv apps/web/.vercel/output .vercel/output"
+  "buildCommand": "node scripts/vercelBuild.mjs"
 }
