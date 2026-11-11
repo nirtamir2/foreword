@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { diagnosticErrorClass } from "../packages/db/scripts/diagnosticErrorClass.mjs";
 import { diagnosticErrorCode } from "../packages/db/scripts/diagnosticErrorCode.mjs";
 import { assertProductionSchemaDiff } from "./assertProductionSchemaDiff.mjs";
+import { summarizeProductionSchemaDiff } from "./summarizeProductionSchemaDiff.mjs";
 
 // This branch is diagnostic only. A successful diagnostic must still fail the Vercel build.
 process.exitCode = 1;
@@ -84,6 +85,10 @@ function diagnoseProductionDiff() {
       exitCode,
       prismaCode,
       approvedSql,
+      ddlSummary: summarizeProductionSchemaDiff({
+        sql: result.stdout,
+        databaseUrl: process.env.DATABASE_URL ?? "",
+      }),
       connectionMode: "NORMAL_REPO_CONFIG",
     };
   }
@@ -99,7 +104,16 @@ function diagnoseProductionDiff() {
 }
 
 try {
-  console.log(`FOREWORD_READ_ONLY_DIAG ${JSON.stringify(diagnoseProductionDiff())}`);
+  const diagnostic = diagnoseProductionDiff();
+  if ("ddlSummary" in diagnostic && diagnostic.ddlSummary != null) {
+    const { statements, ...header } = diagnostic.ddlSummary;
+    for (const [index, statement] of statements.entries()) {
+      console.log(`FOREWORD_DDL_STRUCTURE ${JSON.stringify({ index: index + 1, ...statement })}`);
+    }
+    console.log(
+      `FOREWORD_READ_ONLY_DIAG ${JSON.stringify({ ...diagnostic, ddlSummary: { ...header, statementsLogged: statements.length } })}`,
+    );
+  } else console.log(`FOREWORD_READ_ONLY_DIAG ${JSON.stringify(diagnostic)}`);
 } catch (error) {
   console.log(
     `FOREWORD_READ_ONLY_DIAG ${JSON.stringify({ result: "DIAGNOSTIC_SETUP_FAILURE", errorCode: diagnosticErrorCode(error), errorClass: diagnosticErrorClass(error) })}`,

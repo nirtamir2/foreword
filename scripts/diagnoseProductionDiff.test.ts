@@ -85,6 +85,7 @@ it.each([
     mkdirSync(scripts);
     for (const name of [
       "diagnoseProductionDiff.mjs",
+      "summarizeProductionSchemaDiff.mjs",
       "assertProductionSchemaDiff.mjs",
       "productionSchemaChanges.sql",
     ]) {
@@ -107,6 +108,11 @@ it.each([
       path.join(db, "prisma.production.config.mjs"),
     );
     mkdirSync(path.join(db, "prisma/schema"), { recursive: true });
+    cpSync(
+      new URL("../packages/db/prisma/schema/", import.meta.url),
+      path.join(db, "prisma/schema"),
+      { recursive: true },
+    );
     writeFileSync(
       path.join(db, "prisma.diagnostic.config.mjs"),
       'throw new Error("STARTUP_CONFIG_MUST_NOT_LOAD");',
@@ -149,7 +155,14 @@ it.each([
     expect(result.stderr).toBe("");
     const diagnostic = z
       .object({ result: z.string(), prismaCode: z.string().nullable().optional() })
-      .parse(JSON.parse(result.stdout.trim().replace("FOREWORD_READ_ONLY_DIAG ", "")));
+      .parse(
+        JSON.parse(
+          result.stdout
+            .split("\n")
+            .find((line) => line.startsWith("FOREWORD_READ_ONLY_DIAG "))
+            ?.replace("FOREWORD_READ_ONLY_DIAG ", "") ?? "null",
+        ),
+      );
     expect(diagnostic.result).toBe(expected);
     if (output === "CLI_SIGNAL") expect(result.stdout).toContain('"signal":"SIGTERM"');
     if (output.startsWith("P1001")) expect(diagnostic.prismaCode).toBe("P1001");
