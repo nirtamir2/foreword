@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { diagnosticErrorClass } from "../packages/db/scripts/diagnosticErrorClass.mjs";
 import { diagnosticErrorCode } from "../packages/db/scripts/diagnosticErrorCode.mjs";
 import { assertProductionSchemaDiff } from "./assertProductionSchemaDiff.mjs";
 
@@ -31,13 +32,48 @@ async function diagnoseProductionDiff() {
     session.status !== 0 ||
     session.stdout.trim() !== "FOREWORD_SESSION_READ_ONLY"
   ) {
-    let sessionCode = "UNCLASSIFIED";
+    let sessionCode = diagnosticErrorCode(session.error);
+    let sessionClass = diagnosticErrorClass(session.error);
+    let sessionStage = "CHILD_BOOTSTRAP";
+    const stages = new Set([
+      "IMPORT_PG",
+      "LOAD_CONFIG",
+      "CREATE_CLIENT",
+      "CONNECT",
+      "SHOW_DEFAULT_READ_ONLY",
+      "SHOW_TRANSACTION_READ_ONLY",
+      "VERIFY_SESSION",
+      "CLOSE",
+    ]);
     try {
-      sessionCode = diagnosticErrorCode(JSON.parse(session.stdout));
+      /** @type {unknown} */
+      const details = JSON.parse(session.stdout);
+      sessionCode = diagnosticErrorCode(details);
+      sessionClass = diagnosticErrorClass(details);
+      if (
+        details != null &&
+        typeof details === "object" &&
+        "stage" in details &&
+        typeof details.stage === "string" &&
+        stages.has(details.stage)
+      )
+        sessionStage = details.stage;
     } catch {
       /* No raw session output is safe to forward. */
     }
-    return { result: "READ_ONLY_SESSION_NOT_VERIFIED", sessionCode };
+    const sessionExitCode =
+      session.status != null && [0, 1, 2].includes(session.status) ? session.status : null;
+    const signals = new Set(["SIGTERM", "SIGKILL", "SIGABRT", "SIGSEGV", "SIGINT"]);
+    const sessionSignal =
+      session.signal != null && signals.has(session.signal) ? session.signal : null;
+    return {
+      result: "READ_ONLY_SESSION_NOT_VERIFIED",
+      sessionCode,
+      sessionClass,
+      sessionStage,
+      sessionExitCode,
+      sessionSignal,
+    };
   }
 
   const result = spawnSync(

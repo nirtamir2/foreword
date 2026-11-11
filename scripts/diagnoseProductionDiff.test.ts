@@ -68,6 +68,22 @@ it.each([
     expected: "READ_ONLY_SESSION_NOT_VERIFIED",
     called: false,
   },
+  {
+    environment: "production",
+    url: secret,
+    code: 2,
+    output: "SESSION_TLS",
+    expected: "READ_ONLY_SESSION_NOT_VERIFIED",
+    called: false,
+  },
+  {
+    environment: "production",
+    url: secret,
+    code: 2,
+    output: "SESSION_SIGNAL",
+    expected: "READ_ONLY_SESSION_NOT_VERIFIED",
+    called: false,
+  },
 ])(
   "always fails closed with safe classification: $expected",
   ({ environment, url, code, output, expected, called }) => {
@@ -90,10 +106,22 @@ it.each([
       new URL("../packages/db/scripts/diagnosticErrorCode.mjs", import.meta.url),
       path.join(db, "scripts/diagnosticErrorCode.mjs"),
     );
-    writeFileSync(
-      path.join(db, "scripts/checkDiagnosticReadOnlySession.mjs"),
-      `console.log(${JSON.stringify(output === "SESSION_OFF" ? "FOREWORD_SESSION_NOT_READ_ONLY" : "FOREWORD_SESSION_READ_ONLY")});`,
+    cpSync(
+      new URL("../packages/db/scripts/diagnosticErrorClass.mjs", import.meta.url),
+      path.join(db, "scripts/diagnosticErrorClass.mjs"),
     );
+    let sessionFixture = "";
+    if (output === "SESSION_TLS")
+      sessionFixture =
+        'console.log(JSON.stringify({stage:"CONNECT",code:"DEPTH_ZERO_SELF_SIGNED_CERT",name:"Error",message:"never-print"})); process.exitCode=1;';
+    else if (output === "SESSION_SIGNAL")
+      sessionFixture = `process.stderr.write(${JSON.stringify(secret)});process.kill(process.pid,"SIGTERM");`;
+    else {
+      const marker =
+        output === "SESSION_OFF" ? "FOREWORD_SESSION_NOT_READ_ONLY" : "FOREWORD_SESSION_READ_ONLY";
+      sessionFixture = `console.log(${JSON.stringify(marker)});`;
+    }
+    writeFileSync(path.join(db, "scripts/checkDiagnosticReadOnlySession.mjs"), sessionFixture);
 
     writeFileSync(
       path.join(db, "node_modules/prisma/package.json"),
@@ -120,6 +148,17 @@ it.each([
       .object({ result: z.string(), prismaCode: z.string().nullable().optional() })
       .parse(JSON.parse(result.stdout.trim().replace("FOREWORD_READ_ONLY_DIAG ", "")));
     expect(diagnostic.result).toBe(expected);
+    if (output === "SESSION_TLS") {
+      expect(JSON.parse(result.stdout.replace("FOREWORD_READ_ONLY_DIAG ", ""))).toMatchObject({
+        sessionCode: "DEPTH_ZERO_SELF_SIGNED_CERT",
+        sessionClass: "Error",
+        sessionStage: "CONNECT",
+        sessionExitCode: 1,
+        sessionSignal: null,
+      });
+      expect(result.stdout).not.toContain("never-print");
+    }
+    if (output === "SESSION_SIGNAL") expect(result.stdout).toContain('"sessionSignal":"SIGTERM"');
     if (output.startsWith("P1001")) expect(diagnostic.prismaCode).toBe("P1001");
     if (called) {
       const args = z
@@ -177,4 +216,64 @@ require("node:fs").writeFileSync("install.json", JSON.stringify({args:process.ar
     .object({ installCommand: z.string() })
     .parse(JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8")));
   expect(config.installCommand).toBe("node scripts/installDiagnosticDependencies.mjs");
+});
+
+it.each([
+  { stage: "IMPORT_PG", code: "ERR_MODULE_NOT_FOUND", name: "Error" },
+  { stage: "LOAD_CONFIG", code: "ERR_INVALID_URL", name: "TypeError" },
+  { stage: "CREATE_CLIENT", code: "ERR_INVALID_ARG_TYPE", name: "TypeError" },
+  { stage: "CONNECT", code: "DEPTH_ZERO_SELF_SIGNED_CERT", name: "Error" },
+  { stage: "CONNECT", code: "ENOTFOUND", name: "Error" },
+  { stage: "SHOW_DEFAULT_READ_ONLY", code: "08P01", name: "Error" },
+  { stage: "SHOW_TRANSACTION_READ_ONLY", code: "42501", name: "Error" },
+  { stage: "CLOSE", code: "ECONNRESET", name: "Error" },
+])("sanitizes real child failures at $stage: $code", ({ stage, code, name }) => {
+  const root = mkdtempSync(path.join(tmpdir(), "foreword-child-error-"));
+  roots.push(root);
+  const db = path.join(root, "db");
+  mkdirSync(path.join(db, "scripts"), { recursive: true });
+  for (const file of [
+    "checkDiagnosticReadOnlySession.mjs",
+    "diagnosticErrorCode.mjs",
+    "diagnosticErrorClass.mjs",
+  ]) {
+    cpSync(
+      new URL(`../packages/db/scripts/${file}`, import.meta.url),
+      path.join(db, "scripts", file),
+    );
+  }
+  const errorSource = `throw Object.assign(new ${name}(${JSON.stringify(secret)}), {code:${JSON.stringify(code)}});`;
+  writeFileSync(
+    path.join(db, "prisma.diagnostic.config.mjs"),
+    stage === "LOAD_CONFIG" ? errorSource : 'export default {datasource:{url:"unused"}};',
+  );
+  if (stage !== "IMPORT_PG") {
+    mkdirSync(path.join(db, "node_modules/pg"), { recursive: true });
+    writeFileSync(
+      path.join(db, "node_modules/pg/package.json"),
+      JSON.stringify({ type: "module", exports: "./index.js" }),
+    );
+    writeFileSync(
+      path.join(db, "node_modules/pg/index.js"),
+      `export class Client {
+      constructor() { ${stage === "CREATE_CLIENT" ? errorSource : ""} }
+      async connect() { ${stage === "CONNECT" ? errorSource : ""} }
+      async query(sql) {
+        if (sql === "SHOW default_transaction_read_only") { ${stage === "SHOW_DEFAULT_READ_ONLY" ? errorSource : ""} return {rows:[{default_transaction_read_only:"on"}]}; }
+        ${stage === "SHOW_TRANSACTION_READ_ONLY" ? errorSource : ""}
+        return {rows:[{transaction_read_only:"on"}]};
+      }
+      async end() { ${stage === "CLOSE" ? errorSource : ""} }
+    }`,
+    );
+  }
+  const result = spawnSync(
+    process.execPath,
+    [path.join(db, "scripts/checkDiagnosticReadOnlySession.mjs")],
+    { env: {}, encoding: "utf8" },
+  );
+  expect(result.status).toBe(1);
+  expect(result.stderr).toBe("");
+  expect(result.stdout).not.toContain(secret);
+  expect(JSON.parse(result.stdout)).toEqual({ stage, code, name });
 });

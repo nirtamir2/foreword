@@ -1,27 +1,49 @@
 import process from "node:process";
-import { Client } from "pg";
-import * as diagnosticConfig from "../prisma.diagnostic.config.mjs";
+import { diagnosticErrorClass } from "./diagnosticErrorClass.mjs";
 import { diagnosticErrorCode } from "./diagnosticErrorCode.mjs";
 
-const client = new Client({
-  connectionString: diagnosticConfig.default.datasource.url,
-  connectionTimeoutMillis: 10_000,
-  statement_timeout: 10_000,
-});
+let stage = "IMPORT_PG";
+/** @type {import("pg").Client | null} */
+let client = null;
+let failure = null;
 try {
+  const { Client } = await import("pg");
+  stage = "LOAD_CONFIG";
+  const { default: config } = await import("../prisma.diagnostic.config.mjs");
+  stage = "CREATE_CLIENT";
+  client = new Client({
+    connectionString: config.datasource.url,
+    connectionTimeoutMillis: 10_000,
+    statement_timeout: 10_000,
+  });
+  stage = "CONNECT";
   await client.connect();
+  stage = "SHOW_DEFAULT_READ_ONLY";
   const defaults = await client.query("SHOW default_transaction_read_only");
+  stage = "SHOW_TRANSACTION_READ_ONLY";
   const current = await client.query("SHOW transaction_read_only");
+  stage = "VERIFY_SESSION";
   if (
     defaults.rows[0]?.default_transaction_read_only !== "on" ||
     current.rows[0]?.transaction_read_only !== "on"
   ) {
-    console.log("FOREWORD_SESSION_NOT_READ_ONLY");
-    process.exitCode = 1;
-  } else console.log("FOREWORD_SESSION_READ_ONLY");
+    failure = { stage, code: "READ_ONLY_DISABLED", name: "Error" };
+  }
 } catch (error) {
-  console.log(JSON.stringify({ code: diagnosticErrorCode(error) }));
-  process.exitCode = 1;
+  failure = { stage, code: diagnosticErrorCode(error), name: diagnosticErrorClass(error) };
 } finally {
-  await client.end();
+  try {
+    await client?.end();
+  } catch (error) {
+    failure ??= {
+      stage: "CLOSE",
+      code: diagnosticErrorCode(error),
+      name: diagnosticErrorClass(error),
+    };
+  }
+}
+if (failure == null) console.log("FOREWORD_SESSION_READ_ONLY");
+else {
+  console.log(JSON.stringify(failure));
+  process.exitCode = 1;
 }
