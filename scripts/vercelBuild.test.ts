@@ -8,7 +8,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
@@ -112,8 +112,8 @@ describe("effective Vercel build", () => {
   it("preserves Prisma's diff exit code through the real pnpm wrapper", () => {
     const env = {
       PATH: process.env.PATH,
-      HOME: "/home/box",
-      COREPACK_HOME: "/home/box/.cache/corepack",
+      HOME: process.env.HOME ?? homedir(),
+      COREPACK_HOME: process.env.COREPACK_HOME ?? path.join(homedir(), ".cache", "corepack"),
     };
     const args = ["exec", process.execPath, "-e", "process.exit(2)"];
     // eslint-disable-next-line sonarjs/no-os-command-from-path -- Exercise the installed pnpm wrapper, not a mock.
