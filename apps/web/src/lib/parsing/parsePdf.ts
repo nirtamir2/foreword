@@ -40,8 +40,22 @@ interface Props {
 /** Parse a text-based PDF into pseudo-chapters of consecutive pages. */
 export async function parsePdf({ data, onPage }: Props): Promise<ParsedBookContent> {
   ensureWorker();
-  const pdf = await pdfjs.getDocument({ data }).promise;
+  const loadingTask = pdfjs.getDocument({ data });
+  try {
+    return await readPdf({ pdf: await loadingTask.promise, onPage });
+  } finally {
+    // The pdf.js worker is shared for the whole tab; release this document on every exit.
+    await loadingTask.destroy();
+  }
+}
 
+async function readPdf({
+  pdf,
+  onPage,
+}: {
+  pdf: pdfjs.PDFDocumentProxy;
+  onPage: Props["onPage"];
+}): Promise<ParsedBookContent> {
   const pageTexts: Array<string> = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);

@@ -9,31 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
-import { Route as LibraryRouteImport } from './routes/library'
-import { Route as AccessibilityStatementRouteImport } from './routes/accessibility-statement'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StudyBookIdRouteImport } from './routes/study/$bookId'
-import { Route as SettingsPathRouteImport } from './routes/settings/$path'
-import { Route as BooksNewRouteImport } from './routes/books/new'
-import { Route as BooksBookIdRouteImport } from './routes/books/$bookId'
-import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
-import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
-import { Route as AuthPathRouteImport } from './routes/auth/$path'
-import { Route as ApiOgRouteImport } from './routes/api/og'
+import { Route as AccessibilityStatementRouteImport } from './routes/accessibility-statement'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as AccountAccountViewRouteImport } from './routes/account/$accountView'
-import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
+import { Route as ApiOgRouteImport } from './routes/api/og'
+import { Route as AuthPathRouteImport } from './routes/auth/$path'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
+import { Route as BooksBookIdRouteImport } from './routes/books/$bookId'
+import { Route as BooksNewRouteImport } from './routes/books/new'
+import { Route as SettingsPathRouteImport } from './routes/settings/$path'
+import { Route as StudyBookIdRouteImport } from './routes/study/$bookId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
 
-const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
-  id: '/privacy-policy',
-  path: '/privacy-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccessibilityStatementRoute = AccessibilityStatementRouteImport.update({
@@ -41,54 +36,14 @@ const AccessibilityStatementRoute = AccessibilityStatementRouteImport.update({
   path: '/accessibility-statement',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StudyBookIdRoute = StudyBookIdRouteImport.update({
-  id: '/study/$bookId',
-  path: '/study/$bookId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsPathRoute = SettingsPathRouteImport.update({
-  id: '/settings/$path',
-  path: '/settings/$path',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BooksNewRoute = BooksNewRouteImport.update({
-  id: '/books/new',
-  path: '/books/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BooksBookIdRoute = BooksBookIdRouteImport.update({
-  id: '/books/$bookId',
-  path: '/books/$bookId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSignUpRoute = AuthSignUpRouteImport.update({
-  id: '/auth/sign-up',
-  path: '/auth/sign-up',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/auth/login',
-  path: '/auth/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
-  id: '/auth/forgot-password',
-  path: '/auth/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthPathRoute = AuthPathRouteImport.update({
-  id: '/auth/$path',
-  path: '/auth/$path',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiOgRoute = ApiOgRouteImport.update({
-  id: '/api/og',
-  path: '/api/og',
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
@@ -96,14 +51,59 @@ const AccountAccountViewRoute = AccountAccountViewRouteImport.update({
   path: '/account/$accountView',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
-  id: '/api/rpc/$',
-  path: '/api/rpc/$',
+const ApiOgRoute = ApiOgRouteImport.update({
+  id: '/api/og',
+  path: '/api/og',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthPathRoute = AuthPathRouteImport.update({
+  id: '/auth/$path',
+  path: '/auth/$path',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: '/auth/sign-up',
+  path: '/auth/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksBookIdRoute = BooksBookIdRouteImport.update({
+  id: '/books/$bookId',
+  path: '/books/$bookId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksNewRoute = BooksNewRouteImport.update({
+  id: '/books/new',
+  path: '/books/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPathRoute = SettingsPathRouteImport.update({
+  id: '/settings/$path',
+  path: '/settings/$path',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyBookIdRoute = StudyBookIdRouteImport.update({
+  id: '/study/$bookId',
+  path: '/study/$bookId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
+  id: '/api/rpc/$',
+  path: '/api/rpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -240,18 +240,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/privacy-policy': {
-      id: '/privacy-policy'
-      path: '/privacy-policy'
-      fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PrivacyPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accessibility-statement': {
@@ -261,74 +254,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccessibilityStatementRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/study/$bookId': {
-      id: '/study/$bookId'
-      path: '/study/$bookId'
-      fullPath: '/study/$bookId'
-      preLoaderRoute: typeof StudyBookIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/$path': {
-      id: '/settings/$path'
-      path: '/settings/$path'
-      fullPath: '/settings/$path'
-      preLoaderRoute: typeof SettingsPathRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/books/new': {
-      id: '/books/new'
-      path: '/books/new'
-      fullPath: '/books/new'
-      preLoaderRoute: typeof BooksNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/books/$bookId': {
-      id: '/books/$bookId'
-      path: '/books/$bookId'
-      fullPath: '/books/$bookId'
-      preLoaderRoute: typeof BooksBookIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/sign-up': {
-      id: '/auth/sign-up'
-      path: '/auth/sign-up'
-      fullPath: '/auth/sign-up'
-      preLoaderRoute: typeof AuthSignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/login': {
-      id: '/auth/login'
-      path: '/auth/login'
-      fullPath: '/auth/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/forgot-password': {
-      id: '/auth/forgot-password'
-      path: '/auth/forgot-password'
-      fullPath: '/auth/forgot-password'
-      preLoaderRoute: typeof AuthForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/$path': {
-      id: '/auth/$path'
-      path: '/auth/$path'
-      fullPath: '/auth/$path'
-      preLoaderRoute: typeof AuthPathRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/og': {
-      id: '/api/og'
-      path: '/api/og'
-      fullPath: '/api/og'
-      preLoaderRoute: typeof ApiOgRouteImport
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/$accountView': {
@@ -338,11 +275,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountAccountViewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/rpc/$': {
-      id: '/api/rpc/$'
-      path: '/api/rpc/$'
-      fullPath: '/api/rpc/$'
-      preLoaderRoute: typeof ApiRpcSplatRouteImport
+    '/api/og': {
+      id: '/api/og'
+      path: '/api/og'
+      fullPath: '/api/og'
+      preLoaderRoute: typeof ApiOgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/$path': {
+      id: '/auth/$path'
+      path: '/auth/$path'
+      fullPath: '/auth/$path'
+      preLoaderRoute: typeof AuthPathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-up': {
+      id: '/auth/sign-up'
+      path: '/auth/sign-up'
+      fullPath: '/auth/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/$bookId': {
+      id: '/books/$bookId'
+      path: '/books/$bookId'
+      fullPath: '/books/$bookId'
+      preLoaderRoute: typeof BooksBookIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/new': {
+      id: '/books/new'
+      path: '/books/new'
+      fullPath: '/books/new'
+      preLoaderRoute: typeof BooksNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/$path': {
+      id: '/settings/$path'
+      path: '/settings/$path'
+      fullPath: '/settings/$path'
+      preLoaderRoute: typeof SettingsPathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study/$bookId': {
+      id: '/study/$bookId'
+      path: '/study/$bookId'
+      fullPath: '/study/$bookId'
+      preLoaderRoute: typeof StudyBookIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -350,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rpc/$': {
+      id: '/api/rpc/$'
+      path: '/api/rpc/$'
+      fullPath: '/api/rpc/$'
+      preLoaderRoute: typeof ApiRpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

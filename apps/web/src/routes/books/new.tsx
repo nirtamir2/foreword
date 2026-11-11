@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { clsx } from "clsx";
@@ -80,6 +80,15 @@ function NewBookComponent() {
   const [parseStageLabel, setParseStageLabel] = useState<string | null>(null);
   const [progress, setProgress] = useState<PreparationProgress | null>(null);
   const fileRef = useRef<File | null>(null);
+  /** The active preparation run. Set synchronously so a double submit cannot start a second run. */
+  const runRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      // Leaving the page cancels the run: no more AI rounds and no navigation afterwards.
+      runRef.current?.abort();
+    };
+  }, []);
 
   const parseMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -108,6 +117,14 @@ function NewBookComponent() {
   useLeaveGuard({ isActive: isPreparing });
 
   async function startPreparation(setup: BookSetupValue, book: ParsedBook) {
+    if (runRef.current != null) {
+      return;
+    }
+    const controller = new AbortController();
+    runRef.current = controller;
+    const { signal } = controller;
+    // A function, not a property read: the signal flips asynchronously between awaits.
+    const isCancelled = () => signal.aborted;
     let bookId: string | null = null;
     try {
       const created = await createMutation.mutateAsync({
@@ -124,6 +141,9 @@ function NewBookComponent() {
         positionValue: setup.positionValue,
       });
       bookId = created.id;
+      if (isCancelled()) {
+        return;
+      }
       if (created.reused) {
         toast(m.new_book_reused());
       }
@@ -141,9 +161,13 @@ function NewBookComponent() {
           positionType: setup.positionType,
           positionValue: setup.positionValue,
           onProgress: setProgress,
+          signal,
         },
       });
       await queryClient.invalidateQueries({ queryKey: orpc.books.list.key() });
+      if (isCancelled()) {
+        return;
+      }
       if (outcome.created === 0 && outcome.pendingCount === 0) {
         toast.warning(m.new_book_no_cards());
       } else {
@@ -152,12 +176,20 @@ function NewBookComponent() {
       setProgress(null);
       void navigate({ to: "/books/$bookId", params: { bookId } });
     } catch (error) {
+      if (isCancelled()) {
+        // The user left the page; whatever was saved stays resumable from the book page.
+        return;
+      }
       setProgress(null);
       toast.error(preparationErrorMessage({ error, fallback: m.error_preparing_book() }));
       if (bookId != null) {
         // Anything saved so far is resumable from the book page.
         await client.analysis.capabilities().catch(() => null);
         void navigate({ to: "/books/$bookId", params: { bookId } });
+      }
+    } finally {
+      if (runRef.current === controller) {
+        runRef.current = null;
       }
     }
   }

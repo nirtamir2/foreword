@@ -1,10 +1,13 @@
 {
   "extends": "@app-template/config/tsconfig.base.json",
   "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
     "composite": true,
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",
     "sourceMap": true
-  }
+  },
+  "include": ["**/*.ts", "prisma.production.config.mjs", "scripts/*.mjs"]
 }

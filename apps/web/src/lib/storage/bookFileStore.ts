@@ -36,6 +36,10 @@ async function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
+/**
+ * Run one request and settle only when its transaction does: a request "success" fires before
+ * the commit, and quota failures for large files arrive later as a transaction abort.
+ */
 async function runTransaction<T>({
   mode,
   operation,
@@ -43,22 +47,24 @@ async function runTransaction<T>({
   mode: IDBTransactionMode;
   operation: (store: IDBObjectStore) => IDBRequest<T>;
 }): Promise<T> {
-  return await openDatabase().then(
-    async (db) =>
-      await new Promise<T>((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, mode);
-        const request = operation(transaction.objectStore(STORE_NAME));
-        request.addEventListener("success", () => {
-          resolve(request.result);
-        });
-        request.addEventListener("error", () => {
-          reject(request.error ?? new Error("IndexedDB request failed"));
-        });
-        transaction.addEventListener("complete", () => {
-          db.close();
-        });
-      }),
-  );
+  const db = await openDatabase();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, mode);
+      const request = operation(transaction.objectStore(STORE_NAME));
+      transaction.addEventListener("complete", () => {
+        resolve(request.result);
+      });
+      transaction.addEventListener("abort", () => {
+        reject(transaction.error ?? request.error ?? new Error("IndexedDB transaction aborted"));
+      });
+      transaction.addEventListener("error", () => {
+        reject(transaction.error ?? request.error ?? new Error("IndexedDB request failed"));
+      });
+    });
+  } finally {
+    db.close();
+  }
 }
 
 export async function saveBookFile({

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm paraglide:compile && vite build",
+    "build": "pnpm --filter @app-template/db db:generate && pnpm paraglide:compile && vite build",
     "bare-dev": "vite dev",
     "dev": "portless run --name foreword vite dev",
     "paraglide:compile": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale --is-server 'import.meta.env.SSR' --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme",
