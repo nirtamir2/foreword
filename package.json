@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "ci": "pnpm run \"/^(lint|format|type-check).*/\"",
+    "ci": "pnpm lint && pnpm exec oxfmt --check . && pnpm type-check",
     "db:backup": "pnpm --filter @app-template/db db:backup",
     "db:generate": "pnpm --filter @app-template/db db:generate",
     "db:migrate": "pnpm --filter @app-template/db db:migrate",

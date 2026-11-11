@@ -132,7 +132,9 @@ function SocialProviderButton({
 
   const ProviderIcon = providerIcons[provider] ?? Globe;
   const isBusy = isDisabled || isPending || isRedirecting;
-  const continueWithLabel = localization.auth.continueWith.replace("{{provider}}", () =>
+  const continueWithLabel = localization.auth.continueWith.replace(
+    "{{provider}}",
+    // oxlint-disable-next-line eslint-unicorn/no-unsafe-string-replacement -- preserve the existing replacement-string semantics in this lint-only change
     getProviderName(provider),
   );
 

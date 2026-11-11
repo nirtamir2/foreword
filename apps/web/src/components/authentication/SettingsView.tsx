@@ -270,7 +270,8 @@ function LinkedAccountRow({
           <div className="text-sm font-medium text-app-text">{providerName}</div>
           <div className="truncate text-xs text-app-text-muted">
             {account == null
-              ? localization.settings.linkProvider.replace("{{provider}}", () => providerName)
+              ? // oxlint-disable-next-line eslint-unicorn/no-unsafe-string-replacement -- preserve the existing replacement-string semantics in this lint-only change
+                localization.settings.linkProvider.replace("{{provider}}", providerName)
               : account.accountId}
           </div>
         </div>
@@ -305,7 +306,10 @@ function LinkedAccountRow({
           }}
         >
           {isBusy ? null : <Link2Off className="size-4" />}
-          {localization.settings.unlinkProvider.replace("{{provider}}", () => providerName)}
+          {
+            // oxlint-disable-next-line eslint-unicorn/no-unsafe-string-replacement -- preserve the existing replacement-string semantics in this lint-only change
+            localization.settings.unlinkProvider.replace("{{provider}}", providerName)
+          }
         </Button>
       )}
     </div>
