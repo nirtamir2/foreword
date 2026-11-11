@@ -1,8 +1,7 @@
 import path from "node:path";
 import dotenv from "dotenv";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
-// oxlint-disable-next-line eslint-unicorn/no-top-level-side-effects -- the Prisma CLI config must load the app env before reading DATABASE_URL
 dotenv.config({
   path: "../../apps/web/.env",
 });
@@ -13,6 +12,9 @@ export default defineConfig({
     path: path.join("prisma", "migrations"),
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Optional so `prisma generate` (a build step that never connects) works without
+    // database credentials. Commands that connect (migrate, db push, studio) still fail when it
+    // is missing, and the app validates DATABASE_URL at runtime in @app-template/env.
+    url: process.env.DATABASE_URL,
   },
 });

@@ -97,56 +97,73 @@ export const studyRouter = {
       };
     }),
 
-  /** Record one answer: append to the log and move the card's learning state. */
+  /**
+   * Record one answer: append to the log and move the card's learning state. Counters are
+   * incremented atomically and the status is derived from the stored result, so concurrent
+   * answers (two tabs, a retried request) never overwrite each other. A repeated
+   * clientAnswerId is acknowledged without being recorded twice.
+   */
   recordAnswer: protectedProcedure
     .input(
-      z.object({ cardId: z.string().min(1), mode: studyModeSchema, result: reviewResultSchema }),
+      z.object({
+        cardId: z.string().min(1),
+        mode: studyModeSchema,
+        result: reviewResultSchema,
+        clientAnswerId: z.string().min(8).max(64).nullable().default(null),
+      }),
     )
     .handler(async ({ input, context }) => {
       const userId = context.session.user.id;
       const card = await context.db.vocabCard.findFirst({
         where: { id: input.cardId, userId },
-        select: {
-          id: true,
-          reviewState: { select: { timesSeen: true, timesCorrect: true, timesIncorrect: true } },
-        },
+        select: { id: true },
       });
       if (card == null) {
         throw new ORPCError("NOT_FOUND", { message: "Card not found" });
       }
-      const previous = card.reviewState;
-      const timesCorrect = (previous?.timesCorrect ?? 0) + (input.result === "CORRECT" ? 1 : 0);
-      const timesIncorrect =
-        (previous?.timesIncorrect ?? 0) + (input.result === "INCORRECT" ? 1 : 0);
-      const status = nextStatus({ result: input.result, timesCorrect });
+      const { clientAnswerId } = input;
+      if (clientAnswerId != null) {
+        const duplicate = await context.db.studyReview.findUnique({
+          where: { clientAnswerId },
+          select: { userId: true, card: { select: { reviewState: { select: { status: true } } } } },
+        });
+        if (duplicate?.userId === userId) {
+          return { status: duplicate.card.reviewState?.status ?? ("NEW" as const) };
+        }
+      }
+      const correct = input.result === "CORRECT" ? 1 : 0;
+      const incorrect = input.result === "INCORRECT" ? 1 : 0;
       const now = new Date();
 
-      await context.db.$transaction([
-        context.db.reviewState.upsert({
+      const status = await context.db.$transaction(async (tx) => {
+        await tx.studyReview.create({
+          data: { cardId: card.id, userId, mode: input.mode, result: input.result, clientAnswerId },
+        });
+        const counters = await tx.reviewState.upsert({
           where: { cardId: card.id },
           create: {
             cardId: card.id,
             userId,
-            status,
             timesSeen: 1,
-            timesCorrect,
-            timesIncorrect,
+            timesCorrect: correct,
+            timesIncorrect: incorrect,
             lastReviewedAt: now,
-            knownAt: status === "KNOWN" ? now : null,
           },
           update: {
-            status,
-            timesSeen: (previous?.timesSeen ?? 0) + 1,
-            timesCorrect,
-            timesIncorrect,
+            timesSeen: { increment: 1 },
+            timesCorrect: { increment: correct },
+            timesIncorrect: { increment: incorrect },
             lastReviewedAt: now,
-            knownAt: status === "KNOWN" ? now : null,
           },
-        }),
-        context.db.studyReview.create({
-          data: { cardId: card.id, userId, mode: input.mode, result: input.result },
-        }),
-      ]);
+          select: { timesCorrect: true },
+        });
+        const next = nextStatus({ result: input.result, timesCorrect: counters.timesCorrect });
+        await tx.reviewState.update({
+          where: { cardId: card.id },
+          data: { status: next, knownAt: next === "KNOWN" ? now : null },
+        });
+        return next;
+      });
 
       return { status };
     }),

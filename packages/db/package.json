@@ -15,7 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "type-check": "tsgo --noEmit"
+    "type-check": "prisma generate && tsgo --noEmit"
   },
   "dependencies": {
     "@app-template/env": "workspace:*",

@@ -169,6 +169,10 @@ export async function refinePendingCandidates({
     if (result.pendingCount === 0 || outcome.created >= targetCards) {
       break;
     }
+    if (result.processed === 0) {
+      // Every remaining candidate is leased by another run (another tab or upload).
+      break;
+    }
     if (result.processed > 0 && result.created === 0 && result.unresolved >= result.processed) {
       // Nothing came back from the provider this round. Stop instead of burning quota.
       break;
@@ -201,6 +205,7 @@ export async function runInitialPreparation({
     signal: context.signal,
     initialPending: saved.pendingCount,
   });
+  throwIfAborted(context.signal);
   if (outcome.created > 0 || outcome.pendingCount === 0) {
     await client.analysis.finalize({ bookId: context.bookId });
   }

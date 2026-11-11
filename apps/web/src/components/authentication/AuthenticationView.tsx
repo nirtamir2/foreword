@@ -130,6 +130,20 @@ function SocialProviderButton({
     },
   });
 
+  useEffect(() => {
+    // Back from the provider restores this page from the bfcache with the redirect still
+    // "in progress"; nothing else would ever leave that state.
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        setIsRedirecting(false);
+      }
+    }
+    globalThis.addEventListener("pageshow", handlePageShow);
+    return () => {
+      globalThis.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
   const ProviderIcon = providerIcons[provider] ?? Globe;
   const isBusy = isDisabled || isPending || isRedirecting;
   const continueWithLabel = localization.auth.continueWith.replace(
