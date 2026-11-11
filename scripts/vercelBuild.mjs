@@ -6,7 +6,8 @@ import { z } from "zod";
 import { assertProductionSchemaDiff } from "./assertProductionSchemaDiff.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const prisma = ["--filter", "@app-template/db", "exec", "prisma"];
+// Filtered pnpm exec maps Prisma's successful diff exit 2 to failure exit 1.
+const prisma = ["--dir", "packages/db", "exec", "prisma"];
 const config = ["--config", "prisma.production.config.mjs"];
 
 /** @param {{ args: string[], step: string, successCodes?: number[] }} input */

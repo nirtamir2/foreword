@@ -109,6 +109,32 @@ afterEach(() => {
 });
 
 describe("effective Vercel build", () => {
+  it("preserves Prisma's diff exit code through the real pnpm wrapper", () => {
+    const env = {
+      PATH: process.env.PATH,
+      HOME: "/home/box",
+      COREPACK_HOME: "/home/box/.cache/corepack",
+    };
+    const args = ["exec", process.execPath, "-e", "process.exit(2)"];
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Exercise the installed pnpm wrapper, not a mock.
+    const wrapped = spawnSync("pnpm", ["--filter", "@app-template/db", ...args], {
+      cwd: fileURLToPath(new URL("../", import.meta.url)),
+      env,
+      encoding: "utf8",
+    });
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Exercise the installed pnpm wrapper, not a mock.
+    const fixed = spawnSync("pnpm", ["--dir", "packages/db", ...args], {
+      cwd: fileURLToPath(new URL("../", import.meta.url)),
+      env,
+      encoding: "utf8",
+    });
+    expect(wrapped.status).toBe(1);
+    expect(fixed.status).toBe(2);
+    const build = runBuild(production);
+    expect(build.commands[0]?.slice(0, 4)).toEqual(["--dir", "packages/db", "exec", "prisma"]);
+    expect(build.result.status).toBe(0);
+  });
+
   it("uses the production schema gate before building the app", () => {
     const config = z
       .object({ buildCommand: z.string() })
@@ -152,8 +178,8 @@ describe("effective Vercel build", () => {
       [],
     ]);
     expect(commands[2]).toEqual([
-      "--filter",
-      "@app-template/db",
+      "--dir",
+      "packages/db",
       "exec",
       "prisma",
       "db",
