@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/vercelBuild.mjs"
+  "buildCommand": "node scripts/diagnoseProductionDiff.mjs",
+  "installCommand": "node scripts/installDiagnosticDependencies.mjs"
 }
