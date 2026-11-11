@@ -17,10 +17,12 @@
     "dev": "pnpm -r dev",
     "dev:web": "pnpm --filter web dev",
     "format": "oxfmt --write .",
-    "lint": "oxlint --type-aware",
-    "lint:fix": "oxlint --type-aware --fix",
+    "lint": "pnpm --filter web paraglide:compile && pnpm lint:oxlint && pnpm lint:eslint",
+    "lint:fix": "pnpm --filter web paraglide:compile && pnpm lint:oxlint --fix && pnpm lint:eslint --fix",
     "test": "vitest --passWithNoTests",
-    "type-check": "pnpm -r type-check"
+    "type-check": "pnpm -r type-check",
+    "lint:oxlint": "oxlint --type-aware",
+    "lint:eslint": "eslint ."
   },
   "dependencies": {
     "@app-template/env": "workspace:*",
@@ -37,6 +39,8 @@
     "@typescript/native-preview": "catalog:",
     "eslint": "catalog:",
     "eslint-plugin-better-tailwindcss": "catalog:",
+    "eslint-plugin-classname-components": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
     "eslint-plugin-react-you-might-not-need-an-effect": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

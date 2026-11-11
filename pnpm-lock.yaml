@@ -162,6 +162,12 @@ catalogs:
     eslint-plugin-better-tailwindcss:
       specifier: ^4.7.0
       version: 4.11.0
+    eslint-plugin-classname-components:
+      specifier: ^0.0.2
+      version: 0.0.2
+    eslint-plugin-react-refresh:
+      specifier: ^0.5.4
+      version: 0.5.7
     eslint-plugin-react-you-might-not-need-an-effect:
       specifier: ^1.0.1
       version: 1.2.0
@@ -272,7 +278,7 @@ importers:
         version: 5.30.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3)
       '@nirtamir2/eslint-config':
         specifier: 'catalog:'
-        version: 0.4.2(@eslint-react/eslint-plugin@5.30.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3))(@tanstack/eslint-plugin-query@5.107.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3))(@trivago/prettier-plugin-sort-imports@6.0.2(prettier@3.8.2))(@typescript-eslint/typescript-estree@8.72.2(typescript@6.0.3))(@typescript-eslint/utils@8.72.2(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-better-tailwindcss@4.11.0(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2006))(tailwindcss@4.2.4)(typescript@6.0.3))(eslint-plugin-jsx-a11y@6.10.2(eslint@10.14.0(jiti@2.7.0)))(eslint-plugin-react-you-might-not-need-an-effect@1.2.0(eslint@10.14.0(jiti@2.7.0)))(eslint@10.14.0(jiti@2.7.0))(oxlint-tsgolint@7.0.2006)(oxlint@1.93.0(oxlint-tsgolint@7.0.2006))(prettier@3.8.2)(typescript@6.0.3)(vitest@4.1.9(@types/node@25.6.0)(jiti@2.7.0)(jsdom@29.1.0(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.3))(yaml@2.9.1))
+        version: 0.4.2(715570fd317df5b72516bb041f525acc)
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.0
@@ -285,6 +291,12 @@ importers:
       eslint-plugin-better-tailwindcss:
         specifier: 'catalog:'
         version: 4.11.0(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2006))(tailwindcss@4.2.4)(typescript@6.0.3)
+      eslint-plugin-classname-components:
+        specifier: 'catalog:'
+        version: 0.0.2(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3)
+      eslint-plugin-react-refresh:
+        specifier: 'catalog:'
+        version: 0.5.7(eslint@10.14.0(jiti@2.7.0))
       eslint-plugin-react-you-might-not-need-an-effect:
         specifier: 'catalog:'
         version: 1.2.0(eslint@10.14.0(jiti@2.7.0))
@@ -4534,6 +4546,12 @@ packages:
       oxlint:
         optional: true
 
+  eslint-plugin-classname-components@0.0.2:
+    resolution: {integrity: sha512-virPcpodDtGZptxr6EpK+y1TgUKPh/Ew3tWoRqpMfyxZ+sbQX1QHOu/+VNt8+HsYjo0i7aX3ETBJOk6sklp7yw==}
+    peerDependencies:
+      eslint: '*'
+      typescript: '>=5'
+
   eslint-plugin-clsx@0.1.0:
     resolution: {integrity: sha512-g4Q3ybgXqFbyculk7OlkpSlP4ODSCwrZtEogWN49MMC3HcMYubl9b7L2Q3w3++43tMZAkQvQMzGkONDu1haJJg==}
     peerDependencies:
@@ -4725,6 +4743,11 @@ packages:
     peerDependenciesMeta:
       eslint:
         optional: true
+
+  eslint-plugin-react-refresh@0.5.7:
+    resolution: {integrity: sha512-XhJSzLljuYD4UjNuFGJu2v7aD3sqNVK12w5/DCUfrNfHWegZo2+TsavNx8MuxMwEquuFAzNbNfXKU0WoZ+YUIg==}
+    peerDependencies:
+      eslint: ^9 || ^10
 
   eslint-plugin-react-rsc@5.30.1:
     resolution: {integrity: sha512-AGWzg412q2sTcB8QJABg5umem+MEMe5BaikHdvmwe4pYfKz/u5hipmPlSu591WhzMkWG25NuMy2NG9j/fYucJQ==}
@@ -8788,7 +8811,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nirtamir2/eslint-config@0.4.2(@eslint-react/eslint-plugin@5.30.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3))(@tanstack/eslint-plugin-query@5.107.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3))(@trivago/prettier-plugin-sort-imports@6.0.2(prettier@3.8.2))(@typescript-eslint/typescript-estree@8.72.2(typescript@6.0.3))(@typescript-eslint/utils@8.72.2(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-better-tailwindcss@4.11.0(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2006))(tailwindcss@4.2.4)(typescript@6.0.3))(eslint-plugin-jsx-a11y@6.10.2(eslint@10.14.0(jiti@2.7.0)))(eslint-plugin-react-you-might-not-need-an-effect@1.2.0(eslint@10.14.0(jiti@2.7.0)))(eslint@10.14.0(jiti@2.7.0))(oxlint-tsgolint@7.0.2006)(oxlint@1.93.0(oxlint-tsgolint@7.0.2006))(prettier@3.8.2)(typescript@6.0.3)(vitest@4.1.9(@types/node@25.6.0)(jiti@2.7.0)(jsdom@29.1.0(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.3))(yaml@2.9.1))':
+  '@nirtamir2/eslint-config@0.4.2(715570fd317df5b72516bb041f525acc)':
     dependencies:
       '@antfu/install-pkg': 2.1.0
       '@clack/prompts': 1.9.0
@@ -8855,7 +8878,9 @@ snapshots:
       '@tanstack/eslint-plugin-query': 5.107.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3)
       '@trivago/prettier-plugin-sort-imports': 6.0.2(prettier@3.8.2)
       eslint-plugin-better-tailwindcss: 4.11.0(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2006))(tailwindcss@4.2.4)(typescript@6.0.3)
+      eslint-plugin-classname-components: 0.0.2(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@10.14.0(jiti@2.7.0))
+      eslint-plugin-react-refresh: 0.5.7(eslint@10.14.0(jiti@2.7.0))
       eslint-plugin-react-you-might-not-need-an-effect: 1.2.0(eslint@10.14.0(jiti@2.7.0))
       oxlint: 1.93.0(oxlint-tsgolint@7.0.2006)
       oxlint-tsgolint: 7.0.2006
@@ -11715,6 +11740,14 @@ snapshots:
       - '@eslint/css'
       - typescript
 
+  eslint-plugin-classname-components@0.0.2(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3):
+    dependencies:
+      '@typescript-eslint/utils': 8.72.2(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3)
+      eslint: 10.14.0(jiti@2.7.0)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   eslint-plugin-clsx@0.1.0(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
       '@typescript-eslint/types': 8.58.1
@@ -12030,6 +12063,10 @@ snapshots:
       eslint: 10.14.0(jiti@2.7.0)
     transitivePeerDependencies:
       - supports-color
+
+  eslint-plugin-react-refresh@0.5.7(eslint@10.14.0(jiti@2.7.0)):
+    dependencies:
+      eslint: 10.14.0(jiti@2.7.0)
 
   eslint-plugin-react-rsc@5.30.1(eslint@10.14.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
