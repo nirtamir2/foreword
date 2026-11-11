@@ -64,25 +64,17 @@ it.each([
     environment: "production",
     url: secret,
     code: 2,
-    output: "SESSION_OFF",
-    expected: "READ_ONLY_SESSION_NOT_VERIFIED",
-    called: false,
+    output: 'DROP TABLE "study_review";',
+    expected: "SCHEMA_DIFF_PRESENT",
+    called: true,
   },
   {
     environment: "production",
     url: secret,
-    code: 2,
-    output: "SESSION_TLS",
-    expected: "READ_ONLY_SESSION_NOT_VERIFIED",
-    called: false,
-  },
-  {
-    environment: "production",
-    url: secret,
-    code: 2,
-    output: "SESSION_SIGNAL",
-    expected: "READ_ONLY_SESSION_NOT_VERIFIED",
-    called: false,
+    code: 1,
+    output: "CLI_SIGNAL",
+    expected: "CLI_PROCESS_FAILURE",
+    called: true,
   },
 ])(
   "always fails closed with safe classification: $expected",
@@ -110,18 +102,24 @@ it.each([
       new URL("../packages/db/scripts/diagnosticErrorClass.mjs", import.meta.url),
       path.join(db, "scripts/diagnosticErrorClass.mjs"),
     );
-    let sessionFixture = "";
-    if (output === "SESSION_TLS")
-      sessionFixture =
-        'console.log(JSON.stringify({stage:"CONNECT",code:"DEPTH_ZERO_SELF_SIGNED_CERT",name:"Error",message:"never-print"})); process.exitCode=1;';
-    else if (output === "SESSION_SIGNAL")
-      sessionFixture = `process.stderr.write(${JSON.stringify(secret)});process.kill(process.pid,"SIGTERM");`;
-    else {
-      const marker =
-        output === "SESSION_OFF" ? "FOREWORD_SESSION_NOT_READ_ONLY" : "FOREWORD_SESSION_READ_ONLY";
-      sessionFixture = `console.log(${JSON.stringify(marker)});`;
-    }
-    writeFileSync(path.join(db, "scripts/checkDiagnosticReadOnlySession.mjs"), sessionFixture);
+    cpSync(
+      new URL("../packages/db/prisma.production.config.mjs", import.meta.url),
+      path.join(db, "prisma.production.config.mjs"),
+    );
+    mkdirSync(path.join(db, "prisma/schema"), { recursive: true });
+    writeFileSync(
+      path.join(db, "prisma.diagnostic.config.mjs"),
+      'throw new Error("STARTUP_CONFIG_MUST_NOT_LOAD");',
+    );
+    writeFileSync(
+      path.join(db, "scripts/checkDiagnosticReadOnlySession.mjs"),
+      'throw new Error("SESSION_GUARD_MUST_NOT_RUN");',
+    );
+    writeFileSync(
+      path.join(scripts, "vercelBuild.mjs"),
+      'throw new Error("NORMAL_RUNNER_MUST_NOT_LOAD");',
+    );
+    writeFileSync(path.join(db, ".env"), "DATABASE_URL=unused-local-fallback\n");
 
     writeFileSync(
       path.join(db, "node_modules/prisma/package.json"),
@@ -130,10 +128,15 @@ it.each([
     writeFileSync(
       path.join(db, "node_modules/prisma/build/index.js"),
       `
-    require("node:fs").writeFileSync("args.json", JSON.stringify(process.argv.slice(2)));
-    process.stdout.write(${JSON.stringify(output)});
-    process.stderr.write(${JSON.stringify(secret)});
-    process.exit(${code.toString()});
+    (async () => {
+      const args = process.argv.slice(2);
+      require("node:fs").writeFileSync("args.json", JSON.stringify(args));
+      const {default: config} = await import(require("node:url").pathToFileURL(args[args.indexOf("--config")+1]).href);
+      require("node:fs").writeFileSync("normal-config.json", JSON.stringify({unchanged:config.datasource.url===process.env.DATABASE_URL}));
+      process.stderr.write(${JSON.stringify(secret)});
+      if (${JSON.stringify(output)} === "CLI_SIGNAL") process.kill(process.pid,"SIGTERM");
+      else { process.stdout.write(${JSON.stringify(output)}); process.exit(${code.toString()}); }
+    })();
   `,
     );
     const result = spawnSync(process.execPath, [path.join(scripts, "diagnoseProductionDiff.mjs")], {
@@ -148,26 +151,27 @@ it.each([
       .object({ result: z.string(), prismaCode: z.string().nullable().optional() })
       .parse(JSON.parse(result.stdout.trim().replace("FOREWORD_READ_ONLY_DIAG ", "")));
     expect(diagnostic.result).toBe(expected);
-    if (output === "SESSION_TLS") {
-      expect(JSON.parse(result.stdout.replace("FOREWORD_READ_ONLY_DIAG ", ""))).toMatchObject({
-        sessionCode: "DEPTH_ZERO_SELF_SIGNED_CERT",
-        sessionClass: "Error",
-        sessionStage: "CONNECT",
-        sessionExitCode: 1,
-        sessionSignal: null,
-      });
-      expect(result.stdout).not.toContain("never-print");
-    }
-    if (output === "SESSION_SIGNAL") expect(result.stdout).toContain('"sessionSignal":"SIGTERM"');
+    if (output === "CLI_SIGNAL") expect(result.stdout).toContain('"signal":"SIGTERM"');
     if (output.startsWith("P1001")) expect(diagnostic.prismaCode).toBe("P1001");
     if (called) {
       const args = z
         .array(z.string())
         .parse(JSON.parse(readFileSync(path.join(db, "args.json"), "utf8")));
-      expect(args.slice(0, 2)).toEqual(["migrate", "diff"]);
-      expect(args).toContain("--from-config-datasource");
-      expect(args).not.toContain("push");
-      expect(args).not.toContain("build");
+      expect(args).toEqual([
+        "migrate",
+        "diff",
+        "--config",
+        path.join(db, "prisma.production.config.mjs"),
+        "--from-config-datasource",
+        "--to-schema",
+        path.join(db, "prisma/schema"),
+        "--script",
+        "--exit-code",
+      ]);
+      expect(JSON.parse(readFileSync(path.join(db, "normal-config.json"), "utf8"))).toEqual({
+        unchanged: true,
+      });
+      if (output.startsWith("DROP")) expect(result.stdout).toContain('"approvedSql":false');
     } else expect(() => readFileSync(path.join(db, "args.json"))).toThrow();
     expect(() => readFileSync(path.join(root, ".vercel/output/config.json"))).toThrow();
   },
