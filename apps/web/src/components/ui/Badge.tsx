@@ -31,11 +31,12 @@ function Badge({
   render,
   ...props
 }: Omit<useRender.ComponentProps<"span">, "className"> & VariantProps<typeof badgeVariants>) {
+  const className = clsx(badgeVariants({ variant }));
   return useRender({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
-        className: clsx(badgeVariants({ variant })),
+        className,
       },
       props,
     ),

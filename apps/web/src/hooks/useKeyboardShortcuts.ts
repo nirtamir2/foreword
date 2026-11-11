@@ -32,9 +32,9 @@ export function useKeyboardShortcuts({ bindings, isEnabled }: Props) {
         handler(event);
       }
     }
-    globalThis.addEventListener("keydown", handleKeyDown);
+    addEventListener("keydown", handleKeyDown);
     return () => {
-      globalThis.removeEventListener("keydown", handleKeyDown);
+      removeEventListener("keydown", handleKeyDown);
     };
   }, [bindings, isEnabled]);
 }

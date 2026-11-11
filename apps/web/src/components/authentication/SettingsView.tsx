@@ -32,11 +32,12 @@ interface Props {
 
 export function SettingsView({ path }: Props) {
   const session = useAuthenticate();
-  const currentView = path === settingsViewPaths.security ? "security" : "account";
 
   if (session.isPending || session.data == null) {
     return <Loader />;
   }
+
+  const currentView = path === settingsViewPaths.security ? "security" : "account";
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -102,7 +103,7 @@ function AccountSettingsView({
     event.preventDefault();
     changeEmail({
       newEmail: email,
-      callbackURL: globalThis.location.origin + getSettingsPath({ view: "account" }),
+      callbackURL: location.origin + getSettingsPath({ view: "account" }),
     });
   }
 
@@ -176,7 +177,7 @@ function SecuritySettingsView() {
       toast.error(getAuthErrorMessage({ error }));
     },
     onSuccess: () => {
-      globalThis.location.href = getAuthPath({ view: "signIn" });
+      location.assign(getAuthPath({ view: "signIn" }));
     },
   });
   const linkedAccounts = accounts?.filter((account) => account.providerId !== "credential") ?? [];
@@ -269,7 +270,7 @@ function LinkedAccountRow({
           <div className="text-sm font-medium text-app-text">{providerName}</div>
           <div className="truncate text-xs text-app-text-muted">
             {account == null
-              ? localization.settings.linkProvider.replace("{{provider}}", providerName)
+              ? localization.settings.linkProvider.replace("{{provider}}", () => providerName)
               : account.accountId}
           </div>
         </div>
@@ -281,11 +282,11 @@ function LinkedAccountRow({
           size="sm"
           disabled={isBusy}
           onClick={() => {
-            const callbackBaseURL = baseURL.length > 0 ? baseURL : globalThis.location.origin;
+            const callbackBaseURL = baseURL.length > 0 ? baseURL : location.origin;
 
             linkSocial({
               provider,
-              callbackURL: `${callbackBaseURL}${globalThis.location.pathname}`,
+              callbackURL: `${callbackBaseURL}${location.pathname}`,
             });
           }}
         >
@@ -304,7 +305,7 @@ function LinkedAccountRow({
           }}
         >
           {isBusy ? null : <Link2Off className="size-4" />}
-          {localization.settings.unlinkProvider.replace("{{provider}}", providerName)}
+          {localization.settings.unlinkProvider.replace("{{provider}}", () => providerName)}
         </Button>
       )}
     </div>

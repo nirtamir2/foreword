@@ -27,12 +27,12 @@ export const mediaRouter = {
   requestCardVideo: protectedProcedure
     .input(z.object({ cardId: z.string().min(1), regenerate: z.boolean().default(false) }))
     .handler(async ({ input, context }) => {
-      const userId = context.session.user.id;
       if (!context.video.isConfigured) {
         throw new ORPCError("SERVICE_UNAVAILABLE", {
           message: "Video generation is not configured.",
         });
       }
+      const userId = context.session.user.id;
       const card = await context.db.vocabCard.findFirst({
         where: { id: input.cardId, userId },
         include: { video: true, book: { select: { bookLanguage: true } } },
@@ -44,9 +44,7 @@ export const mediaRouter = {
       if (
         existing != null &&
         !input.regenerate &&
-        (existing.status === "COMPLETED" ||
-          existing.status === "QUEUED" ||
-          existing.status === "IN_PROGRESS")
+        ["COMPLETED", "QUEUED", "IN_PROGRESS"].includes(existing.status)
       ) {
         return { status: existing.status, videoUrl: existing.videoUrl, prompt: existing.prompt };
       }

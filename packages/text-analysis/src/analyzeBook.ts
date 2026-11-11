@@ -75,7 +75,7 @@ function recordOccurrence({
  * surnames and places at deep ranks, so a rank alone does not clear a word; only common words
  * (inside the learner's known band) are trusted regardless of casing.
  */
-function looksLikeProperNoun({
+function isLikelyProperNoun({
   occurrence,
   rank,
   level,
@@ -142,7 +142,8 @@ export function analyzeBook(options: AnalyzeBookOptions): Array<VocabularyCandid
   const trigrams = new Map<string, Occurrence>();
 
   for (const chapter of chapters) {
-    for (const sentence of segmentSentences({ text: chapter.text, locale })) {
+    const sentences = segmentSentences({ text: chapter.text, locale });
+    for (const sentence of sentences) {
       const snippet = truncateSnippet(sentence);
       const tokens = tokenizeWordsWithCase({ text: sentence, locale });
       for (const [position, token] of tokens.entries()) {
@@ -190,7 +191,7 @@ export function analyzeBook(options: AnalyzeBookOptions): Array<VocabularyCandid
       continue;
     }
     const rank = getRank(normalized);
-    if (looksLikeProperNoun({ occurrence, rank, level })) {
+    if (isLikelyProperNoun({ occurrence, rank, level })) {
       continue;
     }
     const difficulty = difficultyFromRank({ rank, level, maxRank });
@@ -252,7 +253,7 @@ export function analyzeBook(options: AnalyzeBookOptions): Array<VocabularyCandid
         const wordOccurrence = words.get(part);
         return (
           wordOccurrence != null &&
-          looksLikeProperNoun({ occurrence: wordOccurrence, rank: getRank(part), level })
+          isLikelyProperNoun({ occurrence: wordOccurrence, rank: getRank(part), level })
         );
       });
       if (containsName) {
@@ -262,7 +263,7 @@ export function analyzeBook(options: AnalyzeBookOptions): Array<VocabularyCandid
         return;
       }
       // Phrases made of a single content word plus function words duplicate the word itself.
-      if (contentParts.length < 2 && !parts.some((part) => phraseLexicon.has(part))) {
+      if (contentParts.length < 2 && parts.every((part) => !phraseLexicon.has(part))) {
         return;
       }
     }
@@ -300,7 +301,7 @@ export function analyzeBook(options: AnalyzeBookOptions): Array<VocabularyCandid
   }
 
   for (const [normalized, occurrence] of bigrams) {
-    const [first, second] = normalized.split(" ");
+    const [first, second] = normalized.split(" ", 2);
     if (first == null || second == null) {
       continue;
     }

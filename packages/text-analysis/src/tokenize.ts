@@ -80,7 +80,8 @@ export function tokenizeWordsWithCase({
   locale: string;
 }): Array<WordToken> {
   const tokens: Array<WordToken> = [];
-  for (const segment of wordSegmenter({ locale }).segment(text)) {
+  const segments = wordSegmenter({ locale }).segment(text);
+  for (const segment of segments) {
     if (segment.isWordLike !== true) {
       continue;
     }

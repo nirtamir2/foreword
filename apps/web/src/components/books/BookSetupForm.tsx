@@ -88,6 +88,7 @@ function positionValueLabel({ positionType }: { positionType: PositionType }): s
 }
 
 function toPositiveInt(value: string): number | null {
+  // oxlint-disable-next-line unicorn/prefer-number-coercion -- parseInt's prefix parsing and truncation are the intended input semantics
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
@@ -117,11 +118,11 @@ export function BookSetupForm({ book, isSubmitting, onSubmit }: Props) {
 
   const positionMax = positionMaxFor({ positionType, book });
 
-  const sameLanguage = bookLanguage === nativeLanguage;
+  const isSameLanguage = bookLanguage === nativeLanguage;
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (sameLanguage) {
+    if (isSameLanguage) {
       return;
     }
     onSubmit({
@@ -178,7 +179,7 @@ export function BookSetupForm({ book, isSubmitting, onSubmit }: Props) {
             label={m.setup_native_language()}
             htmlFor={`${idPrefix}-native-language`}
             helperText={m.setup_native_language_helper()}
-            error={sameLanguage ? m.setup_same_language_error() : undefined}
+            error={isSameLanguage ? m.setup_same_language_error() : undefined}
           >
             <Select
               items={labels}
@@ -192,7 +193,7 @@ export function BookSetupForm({ book, isSubmitting, onSubmit }: Props) {
               <SelectTrigger
                 variant="full"
                 id={`${idPrefix}-native-language`}
-                aria-invalid={sameLanguage}
+                aria-invalid={isSameLanguage}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -219,7 +220,7 @@ export function BookSetupForm({ book, isSubmitting, onSubmit }: Props) {
         <RadioGroup
           value={level}
           onValueChange={(value) => {
-            setLevel(value as LearnerLevel);
+            setLevel(value);
           }}
           className="grid grid-cols-1 gap-3 sm:grid-cols-3"
           aria-label={m.setup_level_title()}
@@ -271,10 +272,11 @@ export function BookSetupForm({ book, isSubmitting, onSubmit }: Props) {
               )}
               value={positionType}
               onValueChange={(value) => {
-                if (value != null) {
-                  setPositionType(value as PositionType);
-                  setPositionValue("");
+                if (value == null) {
+                  return;
                 }
+                setPositionType(value);
+                setPositionValue("");
               }}
             >
               <SelectTrigger variant="full" id={`${idPrefix}-position`}>
@@ -319,7 +321,7 @@ export function BookSetupForm({ book, isSubmitting, onSubmit }: Props) {
           <Sparkles className="size-4 text-app-accent" />
           {m.setup_submit_hint()}
         </p>
-        <Button type="submit" size="lg" disabled={isSubmitting || sameLanguage}>
+        <Button type="submit" size="lg" disabled={isSubmitting || isSameLanguage}>
           {m.setup_submit()}
           <ArrowRight className={clsx(isRtl && "rotate-180")} />
         </Button>

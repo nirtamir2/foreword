@@ -17,7 +17,7 @@ function getMobilePendingOptions(): { defaultPendingMs?: number; defaultPendingM
     return {};
   }
 
-  if (!globalThis.window.matchMedia("(max-width: 767px)").matches) {
+  if (!matchMedia("(max-width: 767px)").matches) {
     return {};
   }
 

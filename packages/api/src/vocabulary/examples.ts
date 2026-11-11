@@ -10,14 +10,16 @@ export function toExamples(value: unknown): Array<CardExample> {
   }
   const examples: Array<CardExample> = [];
   for (const entry of value) {
-    if (entry != null && typeof entry === "object") {
-      const record = entry as Record<string, unknown>;
-      if (typeof record.source === "string") {
-        examples.push({
-          source: record.source,
-          translation: typeof record.translation === "string" ? record.translation : "",
-        });
-      }
+    if (entry == null || typeof entry !== "object") {
+      continue;
+    }
+
+    const record = entry as Record<string, unknown>;
+    if (typeof record.source === "string") {
+      examples.push({
+        source: record.source,
+        translation: typeof record.translation === "string" ? record.translation : "",
+      });
     }
   }
   return examples;

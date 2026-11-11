@@ -20,7 +20,7 @@ export interface AnalyzeBookResponse {
 
 const workerApi = {
   async analyze(request: AnalyzeBookRequest): Promise<AnalyzeBookResponse> {
-    const language = request.language.split("-")[0] ?? request.language;
+    const language = request.language.split("-", 1)[0] ?? request.language;
     const frequency = await loadFrequencyList({ language });
     const candidates = analyzeBook({
       chapters: request.chapters,

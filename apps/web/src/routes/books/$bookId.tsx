@@ -211,12 +211,12 @@ function BookComponent() {
           </section>
         ) : null}
 
-        {book != null &&
-        cardsQuery.isSuccess &&
-        cards.length === 0 &&
-        state != null &&
+        {state != null &&
         state !== "preparing" &&
         state !== "ready" &&
+        book != null &&
+        cardsQuery.isSuccess &&
+        cards.length === 0 &&
         !preparation.needsUpload ? (
           <PreparationStateCard
             state={state}

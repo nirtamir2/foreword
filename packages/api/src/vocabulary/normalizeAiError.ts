@@ -18,7 +18,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function collectText({ value, depth = 0 }: { value: unknown; depth?: number }): Array<string> {
-  if (depth > 3 || value == null) {
+  if (value == null || depth > 3) {
     return [];
   }
   if (typeof value === "string") {
@@ -133,7 +133,7 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
 /** Errors where retrying the same request immediately will not help. */
 export function isTerminalAiError(error: unknown): boolean {
   const { code } = normalizeAiError(error);
-  return code === "TOO_MANY_REQUESTS" || code === "UNAUTHORIZED" || code === "FORBIDDEN";
+  return ["TOO_MANY_REQUESTS", "UNAUTHORIZED", "FORBIDDEN"].includes(code);
 }
 
 /** Errors that affect the whole provider rather than one oversized batch. */

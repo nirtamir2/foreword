@@ -47,14 +47,14 @@ export function useBookPreparation({ book }: { book: BookDetail | undefined }) {
     if (contentHash == null) {
       return;
     }
-    let cancelled = false;
+    let isCancelled = false;
     void hasBookFile({ contentHash }).then((exists) => {
-      if (!cancelled) {
+      if (!isCancelled) {
         setHasSavedFile(exists);
       }
     });
     return () => {
-      cancelled = true;
+      isCancelled = true;
     };
   }, [contentHash]);
 
