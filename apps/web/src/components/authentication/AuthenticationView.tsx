@@ -138,9 +138,9 @@ function SocialProviderButton({
         setIsRedirecting(false);
       }
     }
-    globalThis.addEventListener("pageshow", handlePageShow);
+    addEventListener("pageshow", handlePageShow);
     return () => {
-      globalThis.removeEventListener("pageshow", handlePageShow);
+      removeEventListener("pageshow", handlePageShow);
     };
   }, []);
 
@@ -148,6 +148,7 @@ function SocialProviderButton({
   const isBusy = isDisabled || isPending || isRedirecting;
   const continueWithLabel = localization.auth.continueWith.replace(
     "{{provider}}",
+    // oxlint-disable-next-line eslint-unicorn/no-unsafe-string-replacement -- preserve the existing replacement-string semantics in this lint-only change
     getProviderName(provider),
   );
 
@@ -158,7 +159,7 @@ function SocialProviderButton({
       fullWidth
       disabled={isBusy}
       onClick={() => {
-        const callbackBaseURL = baseURL.length > 0 ? baseURL : globalThis.location.origin;
+        const callbackBaseURL = baseURL.length > 0 ? baseURL : location.origin;
 
         signInSocial({
           provider,
@@ -407,7 +408,7 @@ function ForgotPasswordView() {
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    const callbackBaseURL = baseURL.length > 0 ? baseURL : globalThis.location.origin;
+    const callbackBaseURL = baseURL.length > 0 ? baseURL : location.origin;
 
     requestPasswordReset({
       email,

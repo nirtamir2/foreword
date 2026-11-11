@@ -170,7 +170,6 @@ const SPANISH = new Set([
   "si",
   "yo",
   "tu",
-  "el",
   "ella",
   "nosotros",
   "ellos",
@@ -300,7 +299,6 @@ const HEBREW = new Set([
   "הן",
   "אני",
   "אתה",
-  "את",
   "אנחנו",
   "אתם",
   "יש",
@@ -329,6 +327,6 @@ const BY_LANGUAGE: Record<string, ReadonlySet<string>> = {
 
 /** Function words for a language. Falls back to an empty set for unsupported languages. */
 export function stopwordsFor({ locale }: { locale: string }): ReadonlySet<string> {
-  const base = locale.split("-")[0] ?? locale;
+  const base = locale.split("-", 1)[0] ?? locale;
   return BY_LANGUAGE[base] ?? new Set<string>();
 }

@@ -114,7 +114,7 @@ function parsePackageDocument(opfXml: string): PackageDocument {
   return {
     title: cleanMetadata(meta.title),
     author: cleanMetadata(meta.author),
-    language: cleanMetadata(meta.language)?.toLowerCase().split("-")[0] ?? null,
+    language: cleanMetadata(meta.language)?.toLowerCase().split("-", 1)[0] ?? null,
     manifest,
     spine,
     ncxId: meta.ncxId,
@@ -125,14 +125,14 @@ function parsePackageDocument(opfXml: string): PackageDocument {
 function parseNcxTitles(ncxXml: string, ncxDir: string): Map<string, string> {
   const titles = new Map<string, string>();
   let pendingLabel = "";
-  let capturingLabel = false;
+  let isCapturingLabel = false;
   const parser = new Parser(
     {
       onopentag(name, attributes) {
         const tag = name.toLowerCase();
         switch (tag) {
           case "text": {
-            capturingLabel = true;
+            isCapturingLabel = true;
 
             break;
           }
@@ -157,13 +157,13 @@ function parseNcxTitles(ncxXml: string, ncxDir: string): Map<string, string> {
         }
       },
       ontext(data) {
-        if (capturingLabel) {
+        if (isCapturingLabel) {
           pendingLabel += data;
         }
       },
       onclosetag(name) {
         if (name.toLowerCase() === "text") {
-          capturingLabel = false;
+          isCapturingLabel = false;
         }
       },
     },
@@ -176,11 +176,11 @@ function parseNcxTitles(ncxXml: string, ncxDir: string): Map<string, string> {
 
 /** Resolve an href relative to a directory inside the zip into a normalized path. */
 function resolvePath(baseDir: string, href: string): string {
-  const target = decodeURIComponent(href.split("#")[0] ?? href);
+  const target = decodeURIComponent(href.split("#", 1)[0] ?? href);
   const segments = [...(baseDir.length > 0 ? baseDir.split("/") : []), ...target.split("/")];
   const stack: Array<string> = [];
   for (const segment of segments) {
-    if (segment.length === 0 || segment === ".") {
+    if (segment === "." || segment.length === 0) {
       continue;
     }
     if (segment === "..") {

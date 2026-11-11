@@ -67,6 +67,7 @@ async function runTransaction<T>({
   }
 }
 
+// oxlint-disable-next-line eslint-unicorn/consistent-boolean-name -- an action that reports success, not a predicate
 export async function saveBookFile({
   contentHash,
   file,

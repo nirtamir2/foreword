@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "ci": "pnpm run \"/^(lint|format|type-check).*/\"",
+    "ci": "pnpm lint && pnpm exec oxfmt --check . && pnpm type-check",
     "db:backup": "pnpm --filter @app-template/db db:backup",
     "db:generate": "pnpm --filter @app-template/db db:generate",
     "db:migrate": "pnpm --filter @app-template/db db:migrate",
@@ -17,9 +17,12 @@
     "dev": "pnpm -r dev",
     "dev:web": "pnpm --filter web dev",
     "format": "oxfmt --write .",
-    "lint": "eslint --fix",
+    "lint": "pnpm --filter web paraglide:compile && pnpm lint:oxlint && pnpm lint:eslint",
+    "lint:fix": "pnpm --filter web paraglide:compile && pnpm lint:oxlint --fix && pnpm lint:eslint --fix",
     "test": "vitest --passWithNoTests",
-    "type-check": "pnpm -r type-check"
+    "type-check": "pnpm -r type-check",
+    "lint:oxlint": "oxlint --threads=2 --type-aware",
+    "lint:eslint": "eslint ."
   },
   "dependencies": {
     "@app-template/env": "workspace:*",
@@ -37,7 +40,6 @@
     "eslint": "catalog:",
     "eslint-plugin-better-tailwindcss": "catalog:",
     "eslint-plugin-classname-components": "catalog:",
-    "eslint-plugin-format": "catalog:",
     "eslint-plugin-react-refresh": "catalog:",
     "eslint-plugin-react-you-might-not-need-an-effect": "catalog:",
     "oxfmt": "catalog:",

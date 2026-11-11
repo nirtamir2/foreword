@@ -72,7 +72,7 @@ export function VocabularyToolbar({ filter, filters, onFilterChange, sort, onSor
         value={sort}
         onValueChange={(value) => {
           if (value != null) {
-            onSortChange(value as CardSort);
+            onSortChange(value);
           }
         }}
       >

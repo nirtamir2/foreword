@@ -46,14 +46,14 @@ export function extractTextFromHtml(html: string): ExtractedHtml {
   let heading = "";
   let skipDepth = 0;
   let headingDepth = 0;
-  let headingCaptured = false;
+  let isHeadingCaptured = false;
 
   const parser = new Parser(
     {
       onopentag(name) {
         if (SKIP_TAGS.has(name)) {
           skipDepth += 1;
-        } else if (HEADING_TAGS.has(name) && !headingCaptured) {
+        } else if (!isHeadingCaptured && HEADING_TAGS.has(name)) {
           headingDepth += 1;
         }
       },
@@ -74,7 +74,7 @@ export function extractTextFromHtml(html: string): ExtractedHtml {
         if (HEADING_TAGS.has(name) && headingDepth > 0) {
           headingDepth -= 1;
           if (headingDepth === 0 && heading.trim().length > 0) {
-            headingCaptured = true;
+            isHeadingCaptured = true;
           }
         }
         if (BLOCK_TAGS.has(name)) {

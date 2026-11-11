@@ -34,10 +34,12 @@ function shuffle<T>(items: ReadonlyArray<T>): Array<T> {
     const swap = Math.floor(Math.random() * (index + 1));
     const a = copy[index];
     const b = copy[swap];
-    if (a !== undefined && b !== undefined) {
-      copy[index] = b;
-      copy[swap] = a;
+    if (a === undefined || b === undefined) {
+      continue;
     }
+
+    copy[index] = b;
+    copy[swap] = a;
   }
   return copy;
 }
@@ -112,6 +114,7 @@ export function StudySession({ bookId, scope }: Props) {
     dispatch({ type: "answered", id: clientAnswerId, result });
     const save = recordAnswer
       .mutateAsync({ cardId: current.id, mode, result, clientAnswerId })
+      // oxlint-disable-next-line eslint-unicorn/prefer-then-catch -- retain rejection handling for the save only; catching success-handler errors changes answer state
       .then(
         () => {
           dispatch({ type: "answerSaved", id: clientAnswerId });

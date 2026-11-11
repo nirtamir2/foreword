@@ -62,6 +62,7 @@ async function readPdf({
     const content = await page.getTextContent();
     let pageText = "";
     for (const item of content.items) {
+      // oxlint-disable-next-line eslint-unicorn/prefer-continue -- a `continue` here trips eslint-unicorn/no-break-in-nested-loop
       if ("str" in item) {
         pageText += item.str;
         pageText += item.hasEOL ? "\n" : " ";
@@ -93,12 +94,13 @@ async function readPdf({
   }
 
   const metadata = await pdf.getMetadata().catch(() => null);
+  // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- pdf.js types `info` as `Object`; without the assertion its fields do not type-check
   const info = (metadata?.info ?? null) as PdfInfo | null;
 
   return {
     title: asTrimmedString(info?.Title),
     author: asTrimmedString(info?.Author),
-    declaredLanguage: asTrimmedString(info?.Language)?.toLowerCase().split("-")[0] ?? null,
+    declaredLanguage: asTrimmedString(info?.Language)?.toLowerCase().split("-", 1)[0] ?? null,
     chapters,
     totalWords: chapters.reduce((sum, chapter) => sum + chapter.wordCount, 0),
     totalPages: pdf.numPages,

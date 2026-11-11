@@ -27,14 +27,16 @@ export function useKeyboardShortcuts({ bindings, isEnabled }: Props) {
         return;
       }
       const handler = bindings[event.key];
-      if (handler != null) {
-        event.preventDefault();
-        handler(event);
+      if (handler == null) {
+        return;
       }
+
+      event.preventDefault();
+      handler(event);
     }
-    globalThis.addEventListener("keydown", handleKeyDown);
+    addEventListener("keydown", handleKeyDown);
     return () => {
-      globalThis.removeEventListener("keydown", handleKeyDown);
+      removeEventListener("keydown", handleKeyDown);
     };
   }, [bindings, isEnabled]);
 }

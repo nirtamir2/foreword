@@ -17,6 +17,7 @@ const ogQuerySchema = z.object({
 let interFontsPromise: Promise<Array<Font>> | null = null;
 
 async function getInterFonts() {
+  // oxlint-disable-next-line eslint-unicorn/no-top-level-assignment-in-function -- module-level memoization of the font download
   interFontsPromise ??= loadInterFonts();
 
   return await interFontsPromise;
@@ -38,7 +39,9 @@ async function loadInterFonts() {
       }
 
       const weightMatch = FONT_WEIGHT_REGEX.exec(block);
-      const weight = weightMatch == null ? 400 : Number.parseInt(weightMatch[1], 10);
+      const weight =
+        // oxlint-disable-next-line unicorn/prefer-number-coercion -- parseInt keeps the existing parsing semantics
+        weightMatch == null ? 400 : Number.parseInt(weightMatch[1], 10);
       const fontResponse = await fetch(srcMatch[1]);
       const data = await fontResponse.arrayBuffer();
 

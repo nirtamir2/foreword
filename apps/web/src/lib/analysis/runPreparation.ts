@@ -104,11 +104,11 @@ export async function rankAndSaveCandidates({
           detail: { current: batchIndex + 1, total: batchCount },
         }),
       );
-      const response = await client.analysis.saveCandidates({
-        bookId: context.bookId,
-        items: items.slice(batchIndex * SAVE_BATCH_SIZE, (batchIndex + 1) * SAVE_BATCH_SIZE),
-      });
-      const { saved: savedInBatch, pendingCount: pendingAfterBatch } = response;
+      const { saved: savedInBatch, pendingCount: pendingAfterBatch } =
+        await client.analysis.saveCandidates({
+          bookId: context.bookId,
+          items: items.slice(batchIndex * SAVE_BATCH_SIZE, (batchIndex + 1) * SAVE_BATCH_SIZE),
+        });
       saved += savedInBatch;
       pendingCount = pendingAfterBatch;
     }
@@ -166,11 +166,12 @@ export async function refinePendingCandidates({
     outcome.unresolved += result.unresolved;
     outcome.pendingCount = result.pendingCount;
 
-    if (result.pendingCount === 0 || outcome.created >= targetCards) {
-      break;
-    }
-    if (result.processed === 0) {
+    if (
+      result.pendingCount === 0 ||
+      outcome.created >= targetCards ||
       // Every remaining candidate is leased by another run (another tab or upload).
+      result.processed === 0
+    ) {
       break;
     }
     if (result.processed > 0 && result.created === 0 && result.unresolved >= result.processed) {

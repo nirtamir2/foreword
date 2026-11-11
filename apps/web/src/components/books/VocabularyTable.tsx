@@ -88,8 +88,8 @@ export function VocabularyTable({ cards, bookLanguage, nativeLanguage }: Props) 
 
   const visibleIds = new Set(cards.map((card) => card.id));
   const visibleSelected = [...selectedIds].filter((id) => visibleIds.has(id));
-  const allSelected = cards.length > 0 && visibleSelected.length === cards.length;
-  const someSelected = visibleSelected.length > 0 && !allSelected;
+  const isAllSelected = cards.length > 0 && visibleSelected.length === cards.length;
+  const isSomeSelected = visibleSelected.length > 0 && !isAllSelected;
 
   const setStatus = useMutation({
     ...orpc.cards.setStatus.mutationOptions(),
@@ -108,7 +108,8 @@ export function VocabularyTable({ cards, bookLanguage, nativeLanguage }: Props) 
       return { previous };
     },
     onError: (error, _variables, context) => {
-      for (const [key, data] of context?.previous ?? []) {
+      const previousEntries = context?.previous ?? [];
+      for (const [key, data] of previousEntries) {
         queryClient.setQueryData(key, data);
       }
       toast.error(error instanceof Error ? error.message : m.error_updating_cards());
@@ -123,10 +124,10 @@ export function VocabularyTable({ cards, bookLanguage, nativeLanguage }: Props) 
     },
   });
 
-  function toggle(id: string, checked: boolean) {
+  function toggle(id: string, isChecked: boolean) {
     setSelectedIds((current) => {
       const next = new Set(current);
-      if (checked) {
+      if (isChecked) {
         next.add(id);
       } else {
         next.delete(id);
@@ -150,8 +151,8 @@ export function VocabularyTable({ cards, bookLanguage, nativeLanguage }: Props) 
               <TableHead>
                 <Checkbox
                   aria-label={m.select_all()}
-                  checked={allSelected}
-                  indeterminate={someSelected}
+                  checked={isAllSelected}
+                  indeterminate={isSomeSelected}
                   onCheckedChange={(checked) => {
                     setSelectedIds(checked ? new Set(cards.map((card) => card.id)) : new Set());
                   }}

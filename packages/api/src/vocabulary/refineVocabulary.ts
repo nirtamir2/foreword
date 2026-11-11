@@ -116,7 +116,7 @@ function sanitize({
       continue;
     }
     const hasText = item.translation.trim().length > 0 && item.explanation.trim().length > 0;
-    if (!item.shouldSkip && !hasText) {
+    if (!hasText && !item.shouldSkip) {
       continue;
     }
     const lemma = item.lemma.trim().length > 0 ? item.lemma.trim() : request.surface;
@@ -140,6 +140,7 @@ function sanitize({
         })),
     });
   }
+  // oxlint-disable-next-line eslint-unicorn/prefer-iterator-to-array -- `Iterator#toArray` is not in the TS lib of apps/web, which also type-checks this package
   return [...accepted.values()];
 }
 

@@ -19,7 +19,8 @@ export function segmentSentences({
   locale: string;
 }): Array<string> {
   const sentences: Array<string> = [];
-  for (const segment of sentenceSegmenter({ locale }).segment(text)) {
+  const segments = sentenceSegmenter({ locale }).segment(text);
+  for (const segment of segments) {
     const sentence = segment.segment.replaceAll(/\s+/g, " ").trim();
     if (sentence.length > 0) {
       sentences.push(sentence);

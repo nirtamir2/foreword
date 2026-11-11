@@ -5,6 +5,10 @@ import { toExamples } from "../vocabulary/examples";
 
 export const reviewStatusSchema = z.enum(["NEW", "LEARNING", "KNOWN"]);
 export const cardSortSchema = z.enum(["priority", "alphabetical", "recent"]);
+const cardExampleSchema = z.object({
+  source: z.string().max(400),
+  translation: z.string().max(400),
+});
 
 const ORDER_BY = {
   priority: [{ priorityScore: "desc" }, { createdAt: "asc" }],
@@ -72,10 +76,7 @@ export const cardsRouter = {
         translation: z.string().min(1).max(400).optional(),
         explanation: z.string().max(1000).optional(),
         partOfSpeech: z.string().max(60).nullable().optional(),
-        examples: z
-          .array(z.object({ source: z.string().max(400), translation: z.string().max(400) }))
-          .max(3)
-          .optional(),
+        examples: z.array(cardExampleSchema).max(3).optional(),
       }),
     )
     .handler(async ({ input, context }) => {

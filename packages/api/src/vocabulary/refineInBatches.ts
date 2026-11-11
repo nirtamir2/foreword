@@ -145,7 +145,8 @@ export async function refineInBatches({
   maxAttempts = 3,
 }: Props): Promise<BatchRefinementResult> {
   const result: BatchRefinementResult = { refined: [], unresolvedIds: [], firstError: null };
-  for (const items of chunk(input.items, Math.max(1, batchSize))) {
+  const batches = chunk(input.items, Math.max(1, batchSize));
+  for (const items of batches) {
     const batch = await refineBatchOrSplit({ input, items, refine, maxAttempts });
     result.refined.push(...batch.refined);
     result.unresolvedIds.push(...batch.unresolvedIds);
@@ -154,7 +155,7 @@ export async function refineInBatches({
       // Nothing else in this run will succeed; leave the rest pending for a later resume.
       const remaining = input.items.filter(
         (item) =>
-          !result.refined.some((refined) => refined.id === item.id) &&
+          result.refined.every((refined) => refined.id !== item.id) &&
           !result.unresolvedIds.includes(item.id),
       );
       result.unresolvedIds.push(...remaining.map((item) => item.id));

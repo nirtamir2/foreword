@@ -17,7 +17,7 @@ export function useLeaveGuard({ isActive }: Props) {
         return false;
       }
       // eslint-disable-next-line no-alert -- native confirm mirrors the browser's beforeunload prompt
-      return !globalThis.confirm(m.prep_leave_warning());
+      return !confirm(m.prep_leave_warning());
     },
     enableBeforeUnload: () => isActive,
   });
@@ -29,9 +29,9 @@ export function useLeaveGuard({ isActive }: Props) {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
       event.preventDefault();
     }
-    globalThis.addEventListener("beforeunload", handleBeforeUnload);
+    addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      globalThis.removeEventListener("beforeunload", handleBeforeUnload);
+      removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isActive]);
 }

@@ -31,7 +31,7 @@ function normalizeGuess(value: string): string {
 }
 
 /** A guess counts as a match if it equals the translation or a comma/slash separated sense of it. */
-function guessMatches({ guess, translation }: { guess: string; translation: string }): boolean {
+function isGuessMatch({ guess, translation }: { guess: string; translation: string }): boolean {
   const normalizedGuess = normalizeGuess(guess);
   if (normalizedGuess.length === 0) {
     return false;
@@ -48,7 +48,7 @@ function guessMatches({ guess, translation }: { guess: string; translation: stri
 export function RecallQuestion({ card, bookLanguage, nativeLanguage, onAnswer }: Props) {
   const [guess, setGuess] = useState("");
   const [isRevealed, setIsRevealed] = useState(false);
-  const autoMatched = isRevealed && guessMatches({ guess, translation: card.translation });
+  const autoMatched = isRevealed && isGuessMatch({ guess, translation: card.translation });
 
   useKeyboardShortcuts({
     isEnabled: isRevealed,
