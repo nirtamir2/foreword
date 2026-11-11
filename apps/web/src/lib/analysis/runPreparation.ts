@@ -104,11 +104,11 @@ export async function rankAndSaveCandidates({
           detail: { current: batchIndex + 1, total: batchCount },
         }),
       );
-      const response = await client.analysis.saveCandidates({
-        bookId: context.bookId,
-        items: items.slice(batchIndex * SAVE_BATCH_SIZE, (batchIndex + 1) * SAVE_BATCH_SIZE),
-      });
-      const { saved: savedInBatch, pendingCount: pendingAfterBatch } = response;
+      const { saved: savedInBatch, pendingCount: pendingAfterBatch } =
+        await client.analysis.saveCandidates({
+          bookId: context.bookId,
+          items: items.slice(batchIndex * SAVE_BATCH_SIZE, (batchIndex + 1) * SAVE_BATCH_SIZE),
+        });
       saved += savedInBatch;
       pendingCount = pendingAfterBatch;
     }

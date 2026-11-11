@@ -27,10 +27,12 @@ export function useKeyboardShortcuts({ bindings, isEnabled }: Props) {
         return;
       }
       const handler = bindings[event.key];
-      if (handler != null) {
-        event.preventDefault();
-        handler(event);
+      if (handler == null) {
+        return;
       }
+
+      event.preventDefault();
+      handler(event);
     }
     addEventListener("keydown", handleKeyDown);
     return () => {

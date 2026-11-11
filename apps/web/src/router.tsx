@@ -13,11 +13,7 @@ function RouterWrap({ children }: { children: React.ReactNode }) {
 }
 
 function getMobilePendingOptions(): { defaultPendingMs?: number; defaultPendingMinMs?: number } {
-  if (import.meta.env.SSR) {
-    return {};
-  }
-
-  if (!matchMedia("(max-width: 767px)").matches) {
+  if (import.meta.env.SSR || !matchMedia("(max-width: 767px)").matches) {
     return {};
   }
 

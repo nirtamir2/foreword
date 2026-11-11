@@ -157,6 +157,7 @@ export function analyzeBook(options: AnalyzeBookOptions): Array<VocabularyCandid
           isLowercaseMidSentence: position > 0 && !token.isCapitalized,
         });
         const next = tokens[position + 1];
+        // oxlint-disable-next-line eslint-unicorn/prefer-continue -- keep nested loop traversal; continue conflicts with eslint-unicorn/no-break-in-nested-loop
         if (next != null) {
           const bigram = `${token.normalized} ${next.normalized}`;
           recordOccurrence({

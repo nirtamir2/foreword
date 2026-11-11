@@ -39,10 +39,12 @@ function shuffle<T>(items: ReadonlyArray<T>): Array<T> {
     const swap = Math.floor(Math.random() * (index + 1));
     const a = copy[index];
     const b = copy[swap];
-    if (a !== undefined && b !== undefined) {
-      copy[index] = b;
-      copy[swap] = a;
+    if (a === undefined || b === undefined) {
+      continue;
     }
+
+    copy[index] = b;
+    copy[swap] = a;
   }
   return copy;
 }

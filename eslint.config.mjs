@@ -64,11 +64,10 @@ export default [
         },
       };
     }
-    if (/^antfu\/(?:jsonc|yaml|toml|sort|pnpm|markdown)\//.test(config.name ?? "")) {
-      return [config];
-    }
-
-    if (config.rules == null) {
+    if (
+      /^antfu\/(?:jsonc|yaml|toml|sort|pnpm|markdown)\//.test(config.name ?? "") ||
+      config.rules == null
+    ) {
       return [config];
     }
 
