@@ -60,6 +60,14 @@ it.each([
     expected: "CLI_FAILURE",
     called: true,
   },
+  {
+    environment: "production",
+    url: secret,
+    code: 2,
+    output: "SESSION_OFF",
+    expected: "READ_ONLY_SESSION_NOT_VERIFIED",
+    called: false,
+  },
 ])(
   "always fails closed with safe classification: $expected",
   ({ environment, url, code, output, expected, called }) => {
@@ -77,6 +85,16 @@ it.each([
     const db = path.join(root, "packages/db");
     mkdirSync(path.join(db, "node_modules/prisma/build"), { recursive: true });
     writeFileSync(path.join(db, "package.json"), "{}");
+    mkdirSync(path.join(db, "scripts"));
+    cpSync(
+      new URL("../packages/db/scripts/diagnosticErrorCode.mjs", import.meta.url),
+      path.join(db, "scripts/diagnosticErrorCode.mjs"),
+    );
+    writeFileSync(
+      path.join(db, "scripts/checkDiagnosticReadOnlySession.mjs"),
+      `console.log(${JSON.stringify(output === "SESSION_OFF" ? "FOREWORD_SESSION_NOT_READ_ONLY" : "FOREWORD_SESSION_READ_ONLY")});`,
+    );
+
     writeFileSync(
       path.join(db, "node_modules/prisma/package.json"),
       JSON.stringify({ exports: { "./build/index.js": "./build/index.js" } }),
@@ -121,4 +139,42 @@ it("makes the effective Vercel entrypoint diagnostic only", () => {
     .object({ buildCommand: z.string() })
     .parse(JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8")));
   expect(config.buildCommand).toBe("node scripts/diagnoseProductionDiff.mjs");
+});
+
+it("disables installation hooks and strips database credentials before pnpm runs", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "foreword-install-"));
+  roots.push(root);
+  mkdirSync(path.join(root, "scripts"));
+  mkdirSync(path.join(root, "bin"));
+  cpSync(
+    new URL("installDiagnosticDependencies.mjs", import.meta.url),
+    path.join(root, "scripts/installDiagnosticDependencies.mjs"),
+  );
+  writeFileSync(
+    path.join(root, "bin/pnpm"),
+    `#!${process.execPath}
+require("node:fs").writeFileSync("install.json", JSON.stringify({args:process.argv.slice(2),hasDatabaseUrl:process.env.DATABASE_URL != null,hasProviderKey:process.env.PROVIDER_KEY != null}));
+`,
+    { mode: 0o755 },
+  );
+  const result = spawnSync(
+    process.execPath,
+    [path.join(root, "scripts/installDiagnosticDependencies.mjs")],
+    {
+      cwd: root,
+      env: { PATH: path.join(root, "bin"), DATABASE_URL: secret, PROVIDER_KEY: secret },
+      encoding: "utf8",
+    },
+  );
+  expect(result.status).toBe(0);
+  expect(result.stdout + result.stderr).not.toContain(secret);
+  expect(JSON.parse(readFileSync(path.join(root, "install.json"), "utf8"))).toEqual({
+    args: ["install", "--frozen-lockfile", "--ignore-scripts", "--ignore-pnpmfile"],
+    hasDatabaseUrl: false,
+    hasProviderKey: false,
+  });
+  const config = z
+    .object({ installCommand: z.string() })
+    .parse(JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8")));
+  expect(config.installCommand).toBe("node scripts/installDiagnosticDependencies.mjs");
 });

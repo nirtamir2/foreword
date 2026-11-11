@@ -2,15 +2,44 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { diagnosticErrorCode } from "../packages/db/scripts/diagnosticErrorCode.mjs";
 import { assertProductionSchemaDiff } from "./assertProductionSchemaDiff.mjs";
 
 // This branch is diagnostic only. A successful diagnostic must still fail the Vercel build.
 process.exitCode = 1;
 
-function diagnoseProductionDiff() {
+async function diagnoseProductionDiff() {
   if (process.env.VERCEL_ENV !== "production") return { result: "NOT_PRODUCTION" };
   if (!process.env.DATABASE_URL?.trim()) return { result: "DATABASE_URL_MISSING" };
   const require = createRequire(new URL("../packages/db/package.json", import.meta.url));
+  const session = spawnSync(
+    process.execPath,
+    [
+      fileURLToPath(
+        new URL("../packages/db/scripts/checkDiagnosticReadOnlySession.mjs", import.meta.url),
+      ),
+    ],
+    {
+      stdio: ["ignore", "pipe", "pipe"],
+      encoding: "utf8",
+      timeout: 30_000,
+      maxBuffer: 4096,
+    },
+  );
+  if (
+    session.error != null ||
+    session.status !== 0 ||
+    session.stdout.trim() !== "FOREWORD_SESSION_READ_ONLY"
+  ) {
+    let sessionCode = "UNCLASSIFIED";
+    try {
+      sessionCode = diagnosticErrorCode(JSON.parse(session.stdout));
+    } catch {
+      /* No raw session output is safe to forward. */
+    }
+    return { result: "READ_ONLY_SESSION_NOT_VERIFIED", sessionCode };
+  }
+
   const result = spawnSync(
     process.execPath,
     [
@@ -18,7 +47,7 @@ function diagnoseProductionDiff() {
       "migrate",
       "diff",
       "--config",
-      fileURLToPath(new URL("../packages/db/prisma.production.config.mjs", import.meta.url)),
+      fileURLToPath(new URL("../packages/db/prisma.diagnostic.config.mjs", import.meta.url)),
       "--from-config-datasource",
       "--to-schema",
       fileURLToPath(new URL("../packages/db/prisma/schema", import.meta.url)),
@@ -66,16 +95,22 @@ function diagnoseProductionDiff() {
     } catch {
       /* Only the boolean is safe to log. */
     }
-    return { result: "SCHEMA_DIFF_PRESENT", exitCode, prismaCode, approvedSql };
+    return {
+      result: "SCHEMA_DIFF_PRESENT",
+      exitCode,
+      prismaCode,
+      approvedSql,
+      readOnlySessionVerified: true,
+    };
   }
   if (result.status === 0 && result.stdout.trim() === "-- This is an empty migration.") {
-    return { result: "SCHEMA_UP_TO_DATE", exitCode, prismaCode };
+    return { result: "SCHEMA_UP_TO_DATE", exitCode, prismaCode, readOnlySessionVerified: true };
   }
-  return { result: "CLI_FAILURE", exitCode, prismaCode };
+  return { result: "CLI_FAILURE", exitCode, prismaCode, readOnlySessionVerified: true };
 }
 
 try {
-  console.log(`FOREWORD_READ_ONLY_DIAG ${JSON.stringify(diagnoseProductionDiff())}`);
+  console.log(`FOREWORD_READ_ONLY_DIAG ${JSON.stringify(await diagnoseProductionDiff())}`);
 } catch {
   console.log('FOREWORD_READ_ONLY_DIAG {"result":"DIAGNOSTIC_SETUP_FAILURE"}');
 }

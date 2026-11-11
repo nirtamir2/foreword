@@ -9,5 +9,10 @@
     "outDir": "dist",
     "sourceMap": true
   },
-  "include": ["**/*.ts", "prisma.production.config.mjs", "scripts/*.mjs"]
+  "include": [
+    "**/*.ts",
+    "prisma.production.config.mjs",
+    "scripts/*.mjs",
+    "prisma.diagnostic.config.mjs"
+  ]
 }
